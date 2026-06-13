@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Configurações{% endblock %}
+{% block page_title %}Configurações da Empresa{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header-title">Configurações</h1>
+</div>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="form-card">
+      <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+        <i class="bi bi-building me-2"></i>Dados da Empresa
+      </h6>
+      <form method="post">{% csrf_token %}
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Nome da Empresa *</label>
+            {{ form.nome }}
+            {% if form.nome.errors %}<div class="text-danger small mt-1">{{ form.nome.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">CNPJ</label>{{ form.cnpj }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Telefone</label>{{ form.telefone }}
+          </div>
+          <div class="col-12">
+            <label class="form-label">E-mail</label>{{ form.email }}
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-4 w-100">
+          <i class="bi bi-check-lg me-2"></i>Salvar Configurações
+        </button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="form-card">
+      <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+        <i class="bi bi-credit-card me-2"></i>Plano Atual
+      </h6>
+      {% if plano_ativo %}
+      <div class="d-flex align-items-center gap-3 mb-3 p-3" style="background:#f8fafc;border-radius:12px;">
+        <div style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:{{ plano_ativo.cor }}18;color:{{ plano_ativo.cor }};">
+          <i class="bi {{ plano_ativo.icone }}"></i>
+        </div>
+        <div>
+          <div class="fw-bold">{{ plano_ativo.nome }}</div>
+          <div class="text-muted small">
+            {{ plano_ativo.label_clientes }} clientes · {{ plano_ativo.label_produtos }} produtos · {{plano_ativo.label_categorias}} categorias
+          </div>
+        </div>
+      </div>
+      {% if assinatura %}
+      <dl class="row small">
+        <dt class="col-5 text-muted">Status</dt>
+        <dd class="col-7"><span class="status-badge badge-{% if assinatura.esta_ativa %}ativa{% else %}cancelada{% endif %}">{{ assinatura.get_status_display }}</span></dd>
+        {% if assinatura.data_fim %}
+        <dt class="col-5 text-muted">Validade</dt>
+        <dd class="col-7">{{ assinatura.data_fim|date:"d/m/Y" }} ({{ assinatura.dias_restantes }} dias)</dd>
+        {% endif %}
+      </dl>
+      {% endif %}
+      <a href="{% url 'planos' %}" class="btn btn-outline-primary w-100 mt-3">
+        <i class="bi bi-arrow-up-circle me-2"></i>Ver Planos / Upgrade
+      </a>
+      {% else %}
+      <p class="text-muted">Nenhum plano configurado.</p>
+      <a href="{% url 'planos' %}" class="btn btn-primary">Ver Planos</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

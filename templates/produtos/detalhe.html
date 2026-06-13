@@ -1,0 +1,79 @@
+{% extends 'base.html' %}{% load filters %}
+{% block title %}{{ produto.nome }}{% endblock %}
+{% block page_title %}Produto{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-header-title">{{ produto.nome }}</h1>
+    <p class="page-header-sub">Código: {{ produto.codigo_interno }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if user_perfil|can_edit %}
+    <a href="{% url 'produtos:editar' produto.pk %}" class="btn btn-primary"><i class="bi bi-pencil me-2"></i>Editar</a>
+    {%endif%}
+    <a href="{% url 'produtos:lista' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Voltar</a>
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-4">
+    {% if produto.foto %}
+      <img src="{{ produto.foto.url }}" class="img-fluid rounded-3 mb-4 w-100" style="object-fit:cover;max-height:260px;" />
+    {% else %}
+      <div style="background:#f1f5f9;border-radius:14px;height:200px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:3rem;margin-bottom:1.5rem;">
+        <i class="bi bi-image"></i>
+      </div>
+    {% endif %}
+    <div class="form-card">
+      <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">Informações</h6>
+      <dl class="row mb-0 small">
+        <dt class="col-6 text-muted">Categoria</dt><dd class="col-6">{{ produto.categoria.nome|default:"—" }}</dd>
+        <dt class="col-6 text-muted">Status</dt>
+        <dd class="col-6"><span class="status-badge badge-{{ produto.status }}">{{ produto.get_status_display }}</span></dd>
+        <dt class="col-6 text-muted">Total</dt><dd class="col-6 fw-semibold">{{ produto.quantidade_total }}</dd>
+        <dt class="col-6 text-muted">Disponível</dt>
+        <dd class="col-6 fw-semibold {% if produto.quantidade_disponivel == 0 %}text-danger{% else %}text-success{% endif %}">{{ produto.quantidade_disponivel }}</dd>
+        <dt class="col-6 text-muted">Locado</dt><dd class="col-6">{{ produto.quantidade_locada }}</dd>
+        <dt class="col-6 text-muted">Valor/dia</dt><dd class="col-6 fw-semibold">R$ {{ produto.valor_diario|money }}</dd>
+      </dl>
+      <div class="mt-3">
+        <div class="d-flex justify-content-between small text-muted mb-1"><span>Ocupação</span><span>{{ produto.percentual_ocupacao }}%</span></div>
+        <div class="progress progress-sm">
+          <div class="progress-bar {% if produto.percentual_ocupacao >= 90 %}bg-danger{% elif produto.percentual_ocupacao >= 60 %}bg-warning{% else %}bg-success{% endif %}" style="width:{{ produto.percentual_ocupacao }}%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    {% if produto.descricao %}
+    <div class="form-card mb-4">
+      <h6 class="fw-bold mb-2 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">Descrição</h6>
+      <p class="mb-0 text-muted">{{ produto.descricao }}</p>
+    </div>
+    {% endif %}
+    <div class="table-card">
+      <div class="card-header"><i class="bi bi-file-earmark-text me-2"></i>Locações Recentes</div>
+      <table class="table">
+    <thead>
+        <tr>
+            <th>Locação</th>
+            <th>Cliente</th>
+            <th>Quantidade</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in historico_locacoes %}
+        <tr>
+            <td><a href="{% url 'locacoes:detalhe' item.locacao.id %}">#{{ item.locacao.id }}</a></td>
+            <td>{{ item.locacao.cliente.nome }}</td>
+            <td>{{ item.quantidade }}</td>
+            <td><span class="status-badge badge-{{ item.locacao.status }}">{{ item.locacao.get_status_display }}</span></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+<div class="empty-state"><i class="bi bi-calendar3"></i><p>Veja a agenda para locações.</p><a href="{% url 'agenda:agenda' %}" class="btn btn-outline-primary btn-sm mt-2">Abrir Agenda</a></div>
+  </div>
+</div>
+{% endblock %}

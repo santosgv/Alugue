@@ -1,0 +1,116 @@
+{% extends 'base.html' %}{% load filters %}
+{% block title %}Melhores Clientes{% endblock %}
+{% block page_title %}Relatório — Melhores Clientes{% endblock %}
+{% block extra_css %}{% include 'relatorios/base_relatorio.html' %}{% endblock %}
+
+{% block content %}
+<div class="rel-header">
+  <div>
+    <h1>Melhores Clientes</h1>
+    <p>Ranking por valor gerado e participação no faturamento</p>
+  </div>
+  <a href="{% url 'relatorios:index' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Relatórios
+  </a>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="rel-kpi kpi-purple">
+      <div class="rel-kpi-icon"><i class="bi bi-people-fill"></i></div>
+      <div class="rel-kpi-value">{{ clientes|length }}</div>
+      <div class="rel-kpi-label">Clientes com locações</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="rel-kpi kpi-green">
+      <div class="rel-kpi-icon"><i class="bi bi-currency-dollar"></i></div>
+      <div class="rel-kpi-value" style="font-size:1.3rem;">R$ {{ total_geral|money }}</div>
+      <div class="rel-kpi-label">Receita total gerada</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="rel-kpi kpi-amber">
+      <div class="rel-kpi-icon"><i class="bi bi-person-dash"></i></div>
+      <div class="rel-kpi-value">{{ sem_locacao }}</div>
+      <div class="rel-kpi-label">Clientes sem locação</div>
+    </div>
+  </div>
+</div>
+
+{% if clientes %}
+<div class="table-card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="width:40px;">#</th>
+        <th>Cliente</th>
+        <th>Contato</th>
+        <th class="text-center">Locações</th>
+        <th class="text-end">Valor Total</th>
+        <th style="width:28%;">Participação</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for c in clientes %}
+    <tr>
+      <td>
+        <span class="rank-num {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}rank-n{% endif %}">
+          {{ forloop.counter }}
+        </span>
+      </td>
+      <td>
+        <div class="fw-semibold">
+          <a href="{% url 'clientes:detalhe' c.cliente__id %}" class="text-decoration-none text-dark">
+            {{ c.cliente__nome }}
+          </a>
+        </div>
+        <div class="text-muted small font-monospace">{{ c.cliente__cpf_cnpj }}</div>
+      </td>
+      <td>
+        <div class="small">{{ c.cliente__telefone }}</div>
+        <div class="text-muted small">{{ c.cliente__email|default:"—" }}</div>
+      </td>
+      <td class="text-center fw-semibold">{{ c.total_locacoes }}</td>
+      <td class="text-end fw-bold">R$ {{ c.valor_total|money }}</td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <div class="bar-bg flex-grow-1">
+            <div class="bar-fill"
+                 style="width:{{ c.pct_faturamento }}%;
+                 background:{% if forloop.counter <= 3 %}#8b5cf6{% else %}#94a3b8{% endif %};">
+            </div>
+          </div>
+          <span class="small text-muted" style="width:40px;text-align:right;">
+            {{ c.pct_faturamento }}%
+          </span>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-light fw-bold">
+        <td colspan="4" class="text-end">Total:</td>
+        <td class="text-end text-success">R$ {{ total_geral|money }}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+{% if sem_locacao > 0 %}
+<div class="mt-3 p-3 rounded-3 small" style="background:#f8fafc;border:1px solid #e2e8f0;color:#475569;">
+  <i class="bi bi-info-circle me-2 text-muted"></i>
+  Existem <strong>{{ sem_locacao }}</strong> cliente(s) cadastrado(s) que ainda não realizaram locações.
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-rel">
+  <i class="bi bi-people"></i>
+  <p>Nenhuma locação finalizada ou ativa encontrada.</p>
+</div>
+{% endif %}
+{% endblock %}

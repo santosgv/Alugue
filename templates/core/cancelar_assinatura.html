@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Cancelar Assinatura{% endblock %}
+{% block page_title %}Cancelar Assinatura{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="form-card">
+      <div class="text-center mb-4">
+        <div style="width:64px;height:64px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.8rem;color:#ef4444;">
+          <i class="bi bi-x-octagon-fill"></i>
+        </div>
+        <h5 class="fw-bold">Cancelar Assinatura</h5>
+        {% if assinatura %}
+        <p class="text-muted">
+          Você está cancelando o plano <strong>{{ assinatura.plano.nome }}</strong>.
+          {% if assinatura.data_fim %}
+          O acesso permanece ativo até <strong>{{ assinatura.data_fim|date:"d/m/Y" }}</strong>.
+          {% endif %}
+        </p>
+        {% endif %}
+      </div>
+
+      <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Atenção:</strong> Após o cancelamento, você perderá acesso aos recursos do plano ao final do período pago. Seus dados serão preservados.
+      </div>
+
+      <form method="post">{% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">{{ form.motivo.label }}</label>
+          {{ form.motivo }}
+        </div>
+        <div class="mb-4">
+          <label class="form-label">{{ form.confirmacao.label }}</label>
+          {{ form.confirmacao }}
+          {% if form.confirmacao.errors %}
+          <div class="text-danger small mt-1">{{ form.confirmacao.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="d-flex gap-3">
+          <a href="{% url 'assinatura_painel' %}" class="btn btn-outline-secondary flex-grow-1">Manter Assinatura</a>
+          <button type="submit" class="btn btn-danger flex-grow-1">Confirmar Cancelamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

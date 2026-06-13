@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats cards -->
+<div class="row g-4 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="stat-card stat-blue">
+      <div class="stat-card-icon"><i class="bi bi-people-fill"></i></div>
+      <div class="stat-card-value">{{ total_clientes }}</div>
+      <div class="stat-card-label">Clientes Cadastrados</div>
+      <div class="stat-card-trend text-primary"><i class="bi bi-arrow-right-short"></i>
+        <a href="{% url 'clientes:lista' %}" class="text-primary text-decoration-none">Ver todos</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card stat-purple">
+      <div class="stat-card-icon"><i class="bi bi-archive-fill"></i></div>
+      <div class="stat-card-value">{{ total_produtos }}</div>
+      <div class="stat-card-label">Produtos Ativos</div>
+      <div class="stat-card-trend text-purple" style="color:#8b5cf6"><i class="bi bi-arrow-right-short"></i>
+        <a href="{% url 'produtos:lista' %}" style="color:#8b5cf6" class="text-decoration-none">Ver todos</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card stat-green">
+      <div class="stat-card-icon"><i class="bi bi-file-earmark-check-fill"></i></div>
+      <div class="stat-card-value">{{ locacoes_ativas }}</div>
+      <div class="stat-card-label">Locações Ativas</div>
+      <div class="stat-card-trend text-success"><i class="bi bi-arrow-right-short"></i>
+        <a href="{% url 'locacoes:lista' %}?status=ativa" class="text-success text-decoration-none">Ver ativas</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card stat-red">
+      <div class="stat-card-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <div class="stat-card-value">{{ locacoes_atrasadas }}</div>
+      <div class="stat-card-label">Em Atraso</div>
+      <div class="stat-card-trend text-danger"><i class="bi bi-arrow-right-short"></i>
+        <a href="{% url 'locacoes:lista' %}?status=atrasada" class="text-danger text-decoration-none">Ver atrasadas</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Disponibilidade rápida -->
+<div class="row g-4 mb-4">
+  <div class="col-md-6">
+    <div class="stat-card stat-green" style="padding:18px 24px;">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-card-icon" style="margin-bottom:0;flex-shrink:0"><i class="bi bi-check-circle-fill"></i></div>
+        <div>
+          <div class="stat-card-value" style="font-size:1.6rem">{{ produtos_disponiveis }}</div>
+          <div class="stat-card-label">Produtos Disponíveis Hoje</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="stat-card stat-amber" style="padding:18px 24px;">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-card-icon" style="margin-bottom:0;flex-shrink:0"><i class="bi bi-x-circle-fill"></i></div>
+        <div>
+          <div class="stat-card-value" style="font-size:1.6rem">{{ produtos_esgotados }}</div>
+          <div class="stat-card-label">Produtos Sem Estoque</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Próximas devoluções -->
+  <div class="col-lg-7">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clock-history me-2 text-primary"></i>Próximas Devoluções (7 dias)</span>
+        <a href="{% url 'agenda:agenda' %}" class="btn btn-sm btn-outline-primary">Ver agenda</a>
+      </div>
+      {% if proximas_devolucoes %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr>
+            <th>Locação</th><th>Cliente</th><th>Produtos</th><th>Devolução</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+          {% for loc in proximas_devolucoes %}
+          <tr>
+            <td><a href="{% url 'locacoes:detalhe' loc.pk %}" class="fw-semibold text-decoration-none">#{{ loc.pk }}</a></td>
+            <td>{{ loc.cliente.nome }}</td>
+            <td>
+              {% for item in loc.itens.all %}
+                <span class="badge bg-light text-dark border">{{ item.quantidade }}× {{ item.produto.nome }}</span>
+              {% endfor %}
+            </td>
+            <td>
+              <span class="fw-semibold {% if loc.esta_atrasada %}text-danger{% elif loc.vence_amanha %}text-warning{% else %}text-success{% endif %}">
+                {{ loc.data_fim_prevista|date:"d/m/Y" }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge badge-{{ loc.status }}">{{ loc.get_status_display }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Nenhuma devolução prevista nos próximos 7 dias.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Locações em atraso -->
+  <div class="col-lg-5">
+    <div class="table-card">
+      <div class="card-header">
+        <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>Locações em Atraso
+      </div>
+      {% if locacoes_em_atraso %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr><th>Cliente</th><th>Vencimento</th><th></th></tr></thead>
+          <tbody>
+          {% for loc in locacoes_em_atraso %}
+          <tr>
+            <td>
+              <div class="fw-semibold">{{ loc.cliente.nome }}</div>
+              <div class="text-muted small">#{{ loc.pk }}</div>
+            </td>
+            <td><span class="text-danger fw-semibold">{{ loc.data_fim_prevista|date:"d/m/Y" }}</span></td>
+            <td><a href="{% url 'locacoes:detalhe' loc.pk %}" class="btn btn-sm btn-outline-danger">Ver</a></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-check-circle text-success"></i><p>Nenhuma locação em atraso.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock %}

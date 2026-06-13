@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .formset-row {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    animation: fadeIn .2s ease;
+    position: relative;
+  }
+  .formset-row.to-delete {
+    opacity: .35;
+    pointer-events: none;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .valor-preview {
+    background: #f0fdf4;
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  #empty-state {
+    text-align: center;
+    padding: 28px;
+    color: #94a3b8;
+    border: 2px dashed #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  /* Linha de subtotal por item */
+  .item-subtotal {
+    font-size: .78rem;
+    color: #64748b;
+    margin-top: 6px;
+    text-align: right;
+  }
+  .item-subtotal strong { color: #16a34a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header-title">{{ titulo }}</h1>
+  <a href="{% url 'locacoes:lista' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-2"></i>Voltar
+  </a>
+</div>
+
+<form method="post" id="locacaoForm" novalidate>
+  {% csrf_token %}
+  {{ formset.management_form }}
+
+  <div class="row g-4">
+
+    {# ── Coluna principal ─────────────────────────────────── #}
+    <div class="col-lg-8">
+
+      {# Dados da locação #}
+      <div class="form-card mb-4">
+        <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+          Dados da Locação
+        </h6>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Cliente *</label>
+            {{ form.cliente  }}
+            {% if form.cliente.errors %}
+              <div class="text-danger small mt-1">{{ form.cliente.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="card shadow-sm">
+          <div class="card-body">
+                <h6>
+                    Dados do Cliente
+                </h6>
+
+                <p id="cpf_cnpj">
+                    CPF/CNPJ:
+                </p>
+
+                <p id="telefone">
+                    Telefone:
+                </p>
+
+            </div>
+            </div>
+          <div class="col-md-6">
+            <label class="form-label">Data de Início *</label>
+            {{ form.data_inicio }}
+            {% if form.data_inicio.errors %}
+              <div class="text-danger small mt-1">{{ form.data_inicio.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Data de Devolução *</label>
+            {{ form.data_fim_prevista }}
+            {% if form.data_fim_prevista.errors %}
+              <div class="text-danger small mt-1">{{ form.data_fim_prevista.errors }}</div>
+            {% endif %}
+          </div>
+          {% if form.non_field_errors %}
+            <div class="col-12">
+              <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+            </div>
+          {% endif %}
+          <div class="col-12">
+            <label class="form-label">Observações</label>
+            {{ form.observacoes }}
+          </div>
+        </div>
+      </div>
+
+      {# Itens da locação #}
+      <div class="form-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold mb-0 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+            Itens da Locação
+          </h6>
+          <button type="button" class="btn btn-sm btn-primary" id="addItem">
+            <i class="bi bi-plus-lg me-1"></i>Adicionar Item
+          </button>
+        </div>
+
+        {# Erros do formset #}
+        {% for err in formset.non_form_errors %}
+          <div class="alert alert-danger py-2 small mb-3">{{ err }}</div>
+        {% endfor %}
+
+        {# Container dos itens #}
+        <div id="formset-container">
+
+          {# Itens existentes (edição) ou vazio (criação com extra=0) #}
+          {% for item_form in formset %}
+          <div class="formset-row" data-form-index="{{ forloop.counter0 }}">
+
+            {# Campo id e DELETE ocultos — essenciais para o Django processar #}
+            {{ item_form.id }}
+            <div style="display:none;">{{ item_form.DELETE }}</div>
+
+            <div class="row g-2 align-items-end">
+              <div class="col-md-5">
+                <label class="form-label small fw-semibold">Produto</label>
+                {{ item_form.produto }}
+                {% if item_form.produto.errors %}
+                  <div class="text-danger" style="font-size:.72rem;">{{ item_form.produto.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small fw-semibold">Qtd.</label>
+                {{ item_form.quantidade }}
+                {% if item_form.quantidade.errors %}
+                  <div class="text-danger" style="font-size:.72rem;">{{ item_form.quantidade.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold">Valor/dia (R$)</label>
+                {{ item_form.valor_unitario }}
+                {% if item_form.valor_unitario.errors %}
+                  <div class="text-danger" style="font-size:.72rem;">{{ item_form.valor_unitario.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-item" title="Remover item">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div class="item-subtotal">Subtotal: <strong id="sub-{{ forloop.counter0 }}">R$ 0,00</strong></div>
+          </div>
+          {% endfor %}
+
+        </div>
+
+        {# Estado vazio — aparece quando não há itens #}
+        <div id="empty-state" style="display:none;">
+          <i class="bi bi-cart-plus d-block mb-2" style="font-size:1.6rem;"></i>
+          Nenhum item adicionado.<br>
+          <span class="small">Clique em <strong>Adicionar Item</strong> para incluir produtos.</span>
+        </div>
+
+        <div class="text-muted small mt-2" style="font-size:.75rem;">
+          <i class="bi bi-info-circle me-1"></i>
+          O valor diário é preenchido automaticamente ao selecionar o produto.
+        </div>
+      </div>
+    </div>
+
+    {# ── Lateral: resumo ──────────────────────────────────── #}
+    <div class="col-lg-4">
+      <div class="form-card" style="position:sticky;top:80px;">
+        <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+          Resumo
+        </h6>
+
+        <div class="valor-preview mb-3">
+          <div class="d-flex justify-content-between small text-muted mb-2">
+            <span>Período</span>
+            <span id="preview-dias" class="fw-semibold text-dark">—</span>
+          </div>
+          <div class="d-flex justify-content-between small text-muted mb-2">
+            <span>Itens</span>
+            <span id="preview-itens" class="fw-semibold text-dark">0</span>
+          </div>
+          <hr class="my-2" />
+          <div class="d-flex justify-content-between text-muted">
+            <span class="fw-semibold">Valor estimado</span>
+            <span id="preview-valor" class="fw-bold text-success" style="font-size:1.1rem;">R$ 0,00</span>
+          </div>
+        </div>
+
+        <div id="disponibilidade-msg"></div>
+
+        <button type="submit" class="btn btn-primary w-100 mb-2">
+          <i class="bi bi-check-lg me-2"></i>Salvar Locação
+        </button>
+        <a href="{% url 'locacoes:lista' %}" class="btn btn-outline-secondary w-100">
+          Cancelar
+        </a>
+      </div>
+    </div>
+
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+
+{# Passa os produtos como JSON para o JS — build do select é feito em JS puro #}
+<script>
+'use strict';
+
+// ── Dados vindos do servidor ──────────────────────────────
+const PRODUTOS = JSON.parse('{{ produtos_json|escapejs }}');
+
+// Map id → produto para lookup rápido
+const produtoMap = {};
+PRODUTOS.forEach(p => { produtoMap[p.id] = p; });
+
+// ── Referências DOM ───────────────────────────────────────
+const container      = document.getElementById('formset-container');
+const totalFormsInput = document.querySelector('[name="itens-TOTAL_FORMS"]');
+const emptyState     = document.getElementById('empty-state');
+const btnAdd         = document.getElementById('addItem');
+
+// Contador começa no valor atual do management form
+let formCount = parseInt(totalFormsInput.value);
+
+// ── Gera o HTML do <select> de produtos ──────────────────
+// Feito em JS para evitar problemas com o <template> do Django
+function buildSelectProduto(name, selectedId = '') {
+  let html = `<select name="${name}" class="form-select produto-select">`;
+  html += `<option value="">---------</option>`;
+  PRODUTOS.forEach(p => {
+    const sel = String(p.id) === String(selectedId) ? 'selected' : '';
+    const disp = p.quantidade_disponivel > 0
+      ? `disp: ${p.quantidade_disponivel}`
+      : '⚠ sem estoque';
+    html += `<option value="${p.id}" data-valor="${p.valor_diario}" data-disp="${p.quantidade_disponivel}" ${sel}>`;
+    html += `${p.nome} (${disp})</option>`;
+  });
+  html += `</select>`;
+  return html;
+}
+
+// ── Cria uma nova linha de item ───────────────────────────
+function criarLinha(index) {
+  const div = document.createElement('div');
+  div.className = 'formset-row';
+  div.dataset.formIndex = index;
+
+  div.innerHTML = `
+    <input type="hidden" name="itens-${index}-id" value="" />
+    <input type="hidden" name="itens-${index}-DELETE" value="" class="delete-flag" />
+    <div class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label small fw-semibold">Produto</label>
+        ${buildSelectProduto('itens-' + index + '-produto')}
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold">Qtd.</label>
+        <input type="number" name="itens-${index}-quantidade"
+               class="form-control item-qtd" value="1" min="1" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Valor/dia (R$)</label>
+        <input type="number" name="itens-${index}-valor_unitario"
+               class="form-control item-valor" step="0.01" placeholder="0,00" />
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-item" title="Remover">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+    <div class="item-subtotal">Subtotal: <strong class="sub-val">R$ 0,00</strong></div>
+  `;
+
+  return div;
+}
+
+// ── Vincula eventos a uma linha ───────────────────────────
+function bindLinha(row) {
+  const prodSel  = row.querySelector('.produto-select');
+  const qtdInput = row.querySelector('.item-qtd, input[name*="-quantidade"]');
+  const valInput = row.querySelector('.item-valor, input[name*="-valor_unitario"]');
+  const btnDel   = row.querySelector('.remove-item');
+
+  // Ao trocar o produto → preenche valor diário automaticamente
+  if (prodSel) {
+    prodSel.addEventListener('change', () => {
+      const p = produtoMap[prodSel.value];
+      if (p && valInput) {
+        valInput.value = p.valor_diario;
+        // Aviso visual se sem estoque
+        prodSel.style.borderColor = p.quantidade_disponivel === 0 ? '#ef4444' : '';
+      }
+      atualizarTudo();
+    });
+  }
+
+  // Recalcula ao mudar qtd ou valor
+  [qtdInput, valInput].forEach(el => {
+    el?.addEventListener('input', atualizarTudo);
+  });
+
+  // Remover item
+  btnDel?.addEventListener('click', () => removerLinha(row));
+}
+
+// ── Remove uma linha ──────────────────────────────────────
+function removerLinha(row) {
+  const deleteFlag = row.querySelector('.delete-flag, input[name*="-DELETE"]');
+
+  if (deleteFlag && deleteFlag.type === 'checkbox') {
+    // Item Django existente (tem checkbox DELETE): marca e oculta
+    deleteFlag.checked = true;
+    row.classList.add('to-delete');
+  } else if (deleteFlag && deleteFlag.type === 'hidden') {
+    // Item novo gerado por JS: remove do DOM direto
+    row.remove();
+  } else {
+    row.remove();
+  }
+
+  atualizarTudo();
+  verificarEmpty();
+}
+
+// ── Calcula resumo geral ──────────────────────────────────
+function atualizarTudo() {
+  const inicio = document.querySelector('[name="data_inicio"]')?.value;
+  const fim    = document.querySelector('[name="data_fim_prevista"]')?.value;
+
+  let dias = 0;
+  if (inicio && fim) {
+    const d1 = new Date(inicio), d2 = new Date(fim);
+    dias = Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
+    document.getElementById('preview-dias').textContent = `${dias} dia(s)`;
+  } else {
+    document.getElementById('preview-dias').textContent = '—';
+  }
+
+  let total     = 0;
+  let numItens  = 0;
+
+  container.querySelectorAll('.formset-row:not(.to-delete)').forEach(row => {
+    const qtd = parseFloat(row.querySelector('[name*="-quantidade"]')?.value) || 0;
+    const val = parseFloat(row.querySelector('[name*="-valor_unitario"]')?.value) || 0;
+    const sub = qtd * val * dias;
+
+    // Subtotal por linha
+    const subEl = row.querySelector('.sub-val');
+    if (subEl) subEl.textContent = 'R$ ' + sub.toFixed(2).replace('.', ',');
+
+    if (qtd > 0 && val > 0) {
+      total += sub;
+      numItens++;
+    }
+  });
+
+  document.getElementById('preview-valor').textContent =
+    'R$ ' + total.toFixed(2).replace('.', ',');
+  document.getElementById('preview-itens').textContent = numItens;
+}
+
+// ── Mostra/oculta estado vazio ────────────────────────────
+function verificarEmpty() {
+  const visiveis = container.querySelectorAll('.formset-row:not(.to-delete)');
+  emptyState.style.display = visiveis.length === 0 ? 'block' : 'none';
+}
+
+// ── Botão Adicionar Item ──────────────────────────────────
+btnAdd.addEventListener('click', () => {
+  const linha = criarLinha(formCount);
+  container.appendChild(linha);
+  bindLinha(linha);
+  formCount++;
+  totalFormsInput.value = formCount;
+  verificarEmpty();
+
+  // Foca no select de produto da nova linha
+  linha.querySelector('.produto-select')?.focus();
+});
+
+// ── Inicialização: vincula linhas já existentes (edição) ──
+container.querySelectorAll('.formset-row').forEach(row => bindLinha(row));
+
+// ── Datas: recalcula ao mudar ─────────────────────────────
+document.querySelectorAll('[name="data_inicio"], [name="data_fim_prevista"]')
+  .forEach(el => el.addEventListener('change', atualizarTudo));
+
+// ── Estado inicial ────────────────────────────────────────
+atualizarTudo();
+verificarEmpty();
+</script>
+<script>
+
+$('#id_cliente').on('change', function(){
+
+    const clienteId = $(this).val();
+
+    if(!clienteId)
+        return;
+
+    fetch(`/clientes/cliente/${clienteId}/`)
+        .then(response => response.json())
+        .then(data => {
+
+            $('#cpf_cnpj').text(
+                'CPF/CNPJ: ' + data.cpf_cnpj
+            );
+
+            $('#telefone').text(
+                'Telefone: ' + data.telefone
+            );
+
+        });
+
+});
+
+</script>
+</script>
+{% endblock %}

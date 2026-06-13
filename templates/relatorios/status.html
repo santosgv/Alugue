@@ -1,0 +1,153 @@
+{% extends 'base.html' %}{% load filters %}
+{% block title %}Visão por Status{% endblock %}
+{% block page_title %}Relatório — Visão por Status{% endblock %}
+{% block extra_css %}{% include 'relatorios/base_relatorio.html' %}{% endblock %}
+
+{% block content %}
+<div class="rel-header">
+  <div>
+    <h1>Visão por Status</h1>
+    <p>Distribuição de locações nos últimos {{ periodo_dias }} dias</p>
+  </div>
+  <div class="d-flex gap-2 align-items-center">
+    <div class="rel-filtros mb-0 py-2">
+      <span class="small text-muted fw-semibold">Período:</span>
+      {% for opt in '7,30,90,365'|split:',' %}
+      <a href="?dias={{ opt }}"
+         class="btn btn-sm {% if periodo_dias == opt|add:0 %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        {{ opt }}d
+      </a>
+      {% endfor %}
+    </div>
+    <a href="{% url 'relatorios:index' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Relatórios
+    </a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="rel-kpi kpi-blue">
+      <div class="rel-kpi-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+      <div class="rel-kpi-value">{{ total_qtd }}</div>
+      <div class="rel-kpi-label">Total de locações</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="rel-kpi kpi-green">
+      <div class="rel-kpi-icon"><i class="bi bi-currency-dollar"></i></div>
+      <div class="rel-kpi-value" style="font-size:1.3rem;">R$ {{ total_valor|money }}</div>
+      <div class="rel-kpi-label">Valor total</div>
+    </div>
+  </div>
+</div>
+
+{% if por_status %}
+
+<!-- Cards de status -->
+<div class="row g-3 mb-4">
+  {% for st in por_status %}
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="rel-kpi" style="padding:16px;">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <i class="bi {{ st.icone }} text-{{ st.cor }}"></i>
+        <span class="fw-semibold small">{{ st.label }}</span>
+      </div>
+      <div class="rel-kpi-value" style="font-size:1.6rem;">{{ st.quantidade }}</div>
+      <div class="rel-kpi-label">locação{{ st.quantidade|pluralize }}</div>
+      <div class="small text-muted mt-1">R$ {{ st.valor|money }}</div>
+      <div class="bar-bg mt-2">
+        <div class="bar-fill" style="width:{{ st.pct }}%;background:
+          {% if st.cor == 'success' %}#22c55e
+          {% elif st.cor == 'warning' %}#f59e0b
+          {% elif st.cor == 'danger' %}#ef4444
+          {% else %}#64748b{% endif %};">
+        </div>
+      </div>
+      <div class="small text-muted mt-1" style="text-align:right;">{{ st.pct }}%</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Tabela detalhada -->
+<div class="table-card mb-4">
+  <div class="card-header fw-semibold"><i class="bi bi-list-ul me-2"></i>Detalhe por Status</div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th class="text-center">Locações</th>
+          <th class="text-end">Valor Total</th>
+          <th style="width:35%;">Distribuição</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for st in por_status %}
+      <tr>
+        <td>
+          <span class="d-flex align-items-center gap-2">
+            <i class="bi {{ st.icone }} text-{{ st.cor }}"></i>
+            <span class="fw-semibold">{{ st.label }}</span>
+          </span>
+        </td>
+        <td class="text-center fw-bold">{{ st.quantidade }}</td>
+        <td class="text-end">R$ {{ st.valor|money }}</td>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <div class="bar-bg flex-grow-1">
+              <div class="bar-fill" style="width:{{ st.pct }}%;background:
+                {% if st.cor == 'success' %}#22c55e
+                {% elif st.cor == 'warning' %}#f59e0b
+                {% elif st.cor == 'danger' %}#ef4444
+                {% else %}#64748b{% endif %};">
+              </div>
+            </div>
+            <span class="small text-muted" style="width:36px;text-align:right;">{{ st.pct }}%</span>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="table-light fw-bold">
+          <td>Total</td>
+          <td class="text-center">{{ total_qtd }}</td>
+          <td class="text-end text-success">R$ {{ total_valor|money }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- Criações por dia (mini timeline) -->
+{% if por_dia %}
+<div class="table-card p-4">
+  <div class="fw-semibold small text-muted text-uppercase mb-3" style="letter-spacing:.6px;font-size:.72rem;">
+    <i class="bi bi-calendar3 me-2"></i>Novas Locações por Dia
+  </div>
+  <div class="d-flex gap-1 flex-wrap">
+    {% for dia in por_dia %}
+    <div title="{{ dia.dia|date:'d/m/Y' }}: {{ dia.qtd }} locaç{{ dia.qtd|pluralize:'ão,ões' }}"
+         style="width:28px;height:{% widthratio dia.qtd 5 40 %}px;
+         min-height:4px;
+         background:#3b82f6;
+         border-radius:3px;
+         opacity:{% if dia.qtd >= 3 %}1{% elif dia.qtd == 2 %}0.7{% else %}0.4{% endif %};">
+    </div>
+    {% endfor %}
+  </div>
+  <div class="small text-muted mt-2">Cada barra = 1 dia. Altura proporcional ao volume.</div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-rel">
+  <i class="bi bi-pie-chart"></i>
+  <p>Nenhuma locação encontrada no período selecionado.</p>
+</div>
+{% endif %}
+{% endblock %}

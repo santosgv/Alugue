@@ -1,0 +1,664 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>AlugeSe</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+    font-family:'Inter',sans-serif;
+    overflow-x:hidden;
+    background:#f8fafc;
+}
+
+:root{
+    --primary:#38BDF8;
+    --primary-dark:#0284C7;
+}
+
+.hero{
+    min-height:100vh;
+    position:relative;
+    overflow:hidden;
+}
+
+.bg-gradient-custom{
+    background:
+    radial-gradient(circle at top left,#7dd3fc,transparent 35%),
+    radial-gradient(circle at bottom right,#38bdf8,transparent 40%),
+    #f8fafc;
+}
+
+.glass{
+    backdrop-filter:blur(18px);
+    background:rgba(255,255,255,.55);
+    border:1px solid rgba(255,255,255,.3);
+}
+
+.hero-title{
+    font-size:4.5rem;
+    line-height:1;
+    font-weight:900;
+}
+
+.dynamic-word{
+    color:#0ea5e9;
+}
+
+.floating{
+    animation:float 5s ease-in-out infinite;
+}
+
+@keyframes float{
+    0%{transform:translateY(0)}
+    50%{transform:translateY(-20px)}
+    100%{transform:translateY(0)}
+}
+
+.floating-card{
+    position:absolute;
+    border-radius:24px;
+    padding:20px;
+}
+
+.card-1{
+    top:20%;
+    right:10%;
+}
+
+.card-2{
+    bottom:15%;
+    right:20%;
+}
+
+.card-3{
+    top:50%;
+    right:0;
+}
+
+.search-box{
+    border-radius:20px;
+    padding:10px;
+    background:white;
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
+}
+
+.stat-number{
+    font-size:2rem;
+    font-weight:800;
+    color:#0ea5e9;
+}
+
+.navbar{
+    background:transparent;
+}
+
+.nav-link{
+    font-weight:500;
+}
+
+.btn-primary-custom{
+    background:#0ea5e9;
+    border:none;
+    color:white;
+    border-radius:16px;
+    padding:15px 35px;
+}
+
+.btn-primary-custom:hover{
+    background:#0284c7;
+}
+
+</style>
+
+</head>
+
+<body class="bg-gradient-custom">
+
+<nav class="navbar navbar-expand-lg py-4">
+
+<div class="container">
+
+<a class="navbar-brand fw-bold fs-3 text-info" href="#">
+AlugeSe
+</a>
+
+<button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
+<span class="navbar-toggler-icon"></span>
+</button>
+
+<div class="collapse navbar-collapse" id="menu">
+
+<ul class="navbar-nav ms-auto gap-4">
+
+<li class="nav-item">
+<a class="nav-link" href="#">Como Funciona</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#">Categorias</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#">Planos</a>
+</li>
+
+</ul>
+
+<a href="#" class="btn btn-primary-custom ms-4">
+Entrar
+</a>
+
+</div>
+
+</div>
+
+</nav>
+
+<section class="hero d-flex align-items-center">
+
+<div class="container">
+
+<div class="row align-items-center">
+
+<div class="col-lg-6">
+
+<span class="badge rounded-pill bg-info-subtle text-info px-4 py-2 mb-4">
+🚀 Economia Compartilhada
+</span>
+
+<h1 class="hero-title mb-4">
+
+Alugue sua
+
+<span class="dynamic-word" id="changing-word">
+Furadeira
+</span>
+
+e transforme objetos parados em renda.
+
+</h1>
+
+<p class="lead text-secondary mb-5">
+
+Ganhe dinheiro alugando itens que você já possui.
+Ferramentas, drones, bicicletas, câmeras e muito mais.
+
+</p>
+
+<div class="search-box mb-5">
+
+<div class="row">
+
+<div class="col-md-8">
+<input
+type="text"
+class="form-control border-0"
+placeholder="O que você procura?"
+>
+</div>
+
+<div class="col-md-4">
+<button class="btn btn-info text-white w-100">
+Buscar Agora
+</button>
+</div>
+
+</div>
+
+</div>
+
+<div class="d-flex gap-5">
+
+<div>
+<div class="stat-number">+12k</div>
+<div>Anúncios</div>
+</div>
+
+<div>
+<div class="stat-number">+5k</div>
+<div>Usuários</div>
+</div>
+
+<div>
+<div class="stat-number">R$250k</div>
+<div>Movimentados</div>
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-6 position-relative">
+
+<div class="glass floating floating-card card-1 shadow-lg">
+
+🔨 Furadeira Bosch
+
+<br>
+
+<strong>R$25/dia</strong>
+
+</div>
+
+<div class="glass floating floating-card card-2 shadow-lg">
+
+🚲 Bicicleta
+
+<br>
+
+<strong>R$40/dia</strong>
+
+</div>
+
+<div class="glass floating floating-card card-3 shadow-lg">
+
+📷 Canon DSLR
+
+<br>
+
+<strong>R$70/dia</strong>
+
+</div>
+
+<img
+src="{% static 'img/hero-marketplace.png' %}"
+class="img-fluid floating"
+alt="Marketplace"
+>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="py-5">
+
+    <div class="container">
+
+        <div class="text-center mb-5">
+
+            <span class="badge bg-info-subtle text-info px-4 py-2">
+                Como Funciona
+            </span>
+
+            <h2 class="display-5 fw-bold mt-3">
+                Ganhe dinheiro em apenas
+                <span class="text-info">3 passos</span>
+            </h2>
+
+            <p class="text-secondary">
+                Cadastre seus itens e comece a receber pedidos.
+            </p>
+
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-4">
+
+                <div class="glass p-5 h-100 shadow-sm rounded-5">
+
+                    <div class="fs-1 mb-4">📸</div>
+
+                    <h4 class="fw-bold">
+                        1. Cadastre seu item
+                    </h4>
+
+                    <p class="text-secondary">
+                        Tire fotos, descreva seu produto
+                        e publique gratuitamente.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-4">
+
+                <div class="glass p-5 h-100 shadow-sm rounded-5">
+
+                    <div class="fs-1 mb-4">💬</div>
+
+                    <h4 class="fw-bold">
+                        2. Receba solicitações
+                    </h4>
+
+                    <p class="text-secondary">
+                        Pessoas interessadas entram
+                        em contato através da plataforma.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-4">
+
+                <div class="glass p-5 h-100 shadow-sm rounded-5">
+
+                    <div class="fs-1 mb-4">💰</div>
+
+                    <h4 class="fw-bold">
+                        3. Ganhe dinheiro
+                    </h4>
+
+                    <p class="text-secondary">
+                        Aprove seus aluguéis e receba
+                        uma renda extra com itens parados.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="py-5 bg-white">
+
+    <div class="container">
+
+        <div class="text-center mb-5">
+
+            <span class="badge bg-info-subtle text-info px-4 py-2">
+                Planos
+            </span>
+
+            <h2 class="display-5 fw-bold mt-3">
+                Escolha o plano ideal
+            </h2>
+
+            <p class="text-secondary">
+                Comece gratuitamente e evolua conforme cresce.
+            </p>
+
+        </div>
+
+        <div class="row g-4 justify-content-center">
+
+            <div class="col-lg-4">
+
+                <div class="card border-0 shadow-lg rounded-5 h-100">
+
+                    <div class="card-body p-5">
+
+                        <h4 class="fw-bold">
+                            Gratuito
+                        </h4>
+
+                        <h2 class="display-4 fw-bold">
+                            R$0
+                        </h2>
+
+                        <p class="text-secondary">
+                            Ideal para começar.
+                        </p>
+
+                        <hr>
+
+                        <ul class="list-unstyled">
+
+                            <li class="mb-3">
+                                ✓ Até 5 anúncios
+                            </li>
+
+                            <li class="mb-3">
+                                ✓ Perfil público
+                            </li>
+
+                            <li class="mb-3">
+                                ✓ Suporte básico
+                            </li>
+
+                        </ul>
+
+                        <button class="btn btn-outline-info w-100 rounded-4">
+                            Começar
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-4">
+
+                <div class="card border-0 shadow-lg rounded-5 h-100 position-relative">
+
+                    <span class="badge bg-info position-absolute top-0 start-50 translate-middle px-4 py-2">
+                        Mais Popular
+                    </span>
+
+                    <div class="card-body p-5">
+
+                        <h4 class="fw-bold">
+                            Profissional
+                        </h4>
+
+                        <h2 class="display-4 fw-bold text-info">
+                            R$29
+                        </h2>
+
+                        <p class="text-secondary">
+                            Por mês
+                        </p>
+
+                        <hr>
+
+                        <ul class="list-unstyled">
+
+                            <li class="mb-3">
+                                ✓ Anúncios ilimitados
+                            </li>
+
+                            <li class="mb-3">
+                                ✓ Destaque nos resultados
+                            </li>
+
+                            <li class="mb-3">
+                                ✓ Estatísticas completas
+                            </li>
+
+                            <li class="mb-3">
+                                ✓ Suporte prioritário
+                            </li>
+
+                        </ul>
+
+                        <button class="btn btn-info text-white w-100 rounded-4">
+                            Assinar Agora
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-4">
+
+                <div class="card border-0 shadow-lg rounded-5 h-100">
+
+                    <div class="card-body p-5">
+
+                        <h4 class="fw-bold">
+                            Premium
+                        </h4>
+
+                        <h2 class="display-4 fw-bold">
+                            R$79
+                        </h2>
+
+                        <p class="text-secondary">
+                            Por mês
+                        </p>
+
+                        <hr>
+
+                        <ul class="list-unstyled">
+
+                            <li class="mb-3">
+                                ✓ Tudo do Profissional
+                            </li>
+
+                            <li class="mb-3">
+                                ✓ Selo de confiança
+                            </li>
+
+                            <li class="mb-3">
+                                ✓ Página personalizada
+                            </li>
+
+                            <li class="mb-3">
+                                ✓ Prioridade máxima
+                            </li>
+
+                        </ul>
+
+                        <button class="btn btn-outline-info w-100 rounded-4">
+                            Quero Premium
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="py-5">
+
+    <div class="container">
+
+        <div class="rounded-5 p-5 text-center text-white shadow-lg"
+             style="
+             background:linear-gradient(
+             135deg,
+             #0EA5E9,
+             #38BDF8
+             );">
+
+            <h2 class="display-4 fw-bold mb-4">
+
+                Seus objetos estão gerando
+                <br>
+                dinheiro para alguém.
+
+            </h2>
+
+            <p class="lead mb-5">
+
+                Cadastre-se gratuitamente e descubra
+                quanto você pode ganhar alugando
+                itens que hoje estão parados.
+
+            </p>
+
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+
+                <a href="#"
+                   class="btn btn-light btn-lg px-5 rounded-4">
+
+                    Criar Conta Grátis
+
+                </a>
+
+                <a href="#"
+                   class="btn btn-outline-light btn-lg px-5 rounded-4">
+
+                    Ver Demonstração
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<div class="text-center py-5">
+
+    <h3 class="fw-bold">
+
+        🔨 Furadeiras.
+        🚲 Bicicletas.
+        📷 Câmeras.
+        🎮 Videogames.
+        🚁 Drones.
+
+    </h3>
+
+    <p class="text-secondary mt-3">
+
+        O que está parado para você pode ser
+        exatamente o que outra pessoa precisa hoje.
+
+    </p>
+
+</div>
+
+<script>
+
+const words = [
+
+"Furadeira",
+"Bicicleta",
+"Drone",
+"Câmera",
+"Projetor",
+"Caixa de Som",
+"Escada",
+"Notebook",
+"PS5",
+"GoPro"
+
+];
+
+let index = 0;
+
+setInterval(() => {
+
+index++;
+
+if(index >= words.length){
+    index = 0;
+}
+
+document.getElementById("changing-word").innerText =
+words[index];
+
+},2000);
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% block title %}Planos e Preços{% endblock %}
+{% block page_title %}Planos e Preços{% endblock %}
+
+{% block extra_css %}
+<style>
+  .plano-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 2px solid #e2e8f0;
+    padding: 36px 32px;
+    height: 100%;
+    position: relative;
+    transition: border-color .2s, box-shadow .2s, transform .2s;
+  }
+  .plano-card:hover { box-shadow: 0 16px 48px rgba(0,0,0,.1); transform: translateY(-4px); }
+  .plano-card.destaque { border-color: #3b82f6; box-shadow: 0 8px 32px rgba(59,130,246,.18); }
+  .plano-card.ativo-atual { border-color: #22c55e; }
+
+  .plano-badge-popular {
+    position: absolute;
+    top: -14px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+    color: #fff; font-size: .72rem; font-weight: 700;
+    padding: 4px 18px; border-radius: 20px; white-space: nowrap;
+    letter-spacing: .5px; text-transform: uppercase;
+  }
+  .plano-badge-atual {
+    position: absolute;
+    top: -14px; left: 50%; transform: translateX(-50%);
+    background: #22c55e;
+    color: #fff; font-size: .72rem; font-weight: 700;
+    padding: 4px 18px; border-radius: 20px; white-space: nowrap;
+  }
+
+  .plano-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; margin-bottom: 18px;
+  }
+  .plano-nome { font-size: 1.2rem; font-weight: 700; color: #1e293b; }
+  .plano-desc { font-size: .85rem; color: #64748b; margin-top: 4px; min-height: 36px; }
+
+  .plano-preco { margin: 24px 0 20px; }
+  .plano-preco-valor { font-size: 2.6rem; font-weight: 800; color: #1e293b; line-height: 1; }
+  .plano-preco-periodo { font-size: .82rem; color: #94a3b8; margin-top: 4px; }
+  .plano-preco-anual { font-size: .78rem; color: #22c55e; font-weight: 600; margin-top: 2px; }
+
+  .plano-features { list-style: none; padding: 0; margin: 0 0 28px; }
+  .plano-features li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 7px 0; font-size: .875rem; color: #374151;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .plano-features li:last-child { border-bottom: none; }
+  .plano-features .feat-icon { flex-shrink: 0; margin-top: 1px; }
+  .feat-ok { color: #22c55e; }
+  .feat-no { color: #cbd5e1; text-decoration: line-through; }
+  .feat-no .feat-icon { color: #cbd5e1; }
+
+  .ciclo-toggle { background: #f1f5f9; border-radius: 12px; padding: 4px; display: inline-flex; }
+  .ciclo-btn {
+    padding: 8px 22px; border-radius: 9px; font-size: .875rem;
+    font-weight: 600; cursor: pointer; border: none; background: none;
+    color: #64748b; transition: all .2s;
+  }
+  .ciclo-btn.active { background: #fff; color: #1e293b; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+
+  .desconto-badge {
+    background: #dcfce7; color: #16a34a;
+    font-size: .7rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px; margin-left: 8px;
+  }
+
+  .custom-tooltip {
+  --bs-tooltip-bg: #3b82f6;
+  --bs-tooltip-color: #ffffff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if acesso_bloqueado %}
+<div class="row justify-content-center mb-4">
+  <div class="col-lg-8">
+    <div class="p-4 rounded-3 text-center" style="background:linear-gradient(135deg,#fef2f2,#fff7ed);border:2px solid #fca5a5;">
+      <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.8rem;">
+        🔒
+      </div>
+      <h4 class="fw-bold text-danger mb-2">Acesso Suspenso</h4>
+      <p class="text-muted mb-0" style="font-size:.95rem;">{{ motivo_bloqueio }}</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="text-center mb-5">
+  <h1 style="font-size:2rem;font-weight:800;color:#1e293b;">
+    {% if acesso_bloqueado %}Reative seu Acesso{% else %}Escolha o Plano Ideal{% endif %}
+  </h1>
+  <p class="text-muted mt-2">
+    {% if acesso_bloqueado %}Escolha um plano abaixo para voltar a usar o sistema agora mesmo.
+    {% else %}Sem taxas ocultas. Cancele quando quiser.{% endif %}
+  </p>
+
+</div>
+
+<div class="row g-4 justify-content-center mb-5">
+  {% for item in planos_com_recursos %}
+  {% with plano=item.plano recursos=item.recursos %}
+  <div class="col-md-6 col-xl-4">
+    <div class="plano-card {% if plano.destaque %}destaque{% endif %} {% if plano_atual and plano_atual.slug == plano.slug %}ativo-atual{% endif %}">
+
+      {% if plano_atual and plano_atual.slug == plano.slug %}
+        <div class="plano-badge-atual">✓ Plano Atual</div>
+      {% elif plano.destaque %}
+        <div class="plano-badge-popular">⚡ Mais Popular</div>
+      {% endif %}
+
+      <!-- Ícone -->
+      <div class="plano-icon" style="background:{{ plano.cor }}18;color:{{ plano.cor }};">
+        <i class="bi {{ plano.icone }}"></i>
+      </div>
+
+      <div class="plano-nome">{{ plano.nome }}</div>
+      <div class="plano-desc">{{ plano.descricao }}</div>
+
+      <!-- Preço -->
+      <div class="plano-preco">
+        {% if plano.preco_mensal == 0 %}
+          <div class="plano-preco-valor">Grátis</div>
+        {% else %}
+          <div class="plano-preco-valor d-none" data-ciclo="anual">
+            R$ <span>{{ plano.preco_anual }}</span>
+          </div>
+          <div class="plano-preco-valor" data-ciclo="mensal">
+            R$ <span>{{ plano.preco_mensal }}</span>
+          </div>
+          <div class="plano-preco-periodo" data-ciclo="mensal">por mês</div>
+          <div class="plano-preco-periodo d-none" data-ciclo="anual">por ano</div>
+          {% if plano.desconto_anual_pct > 0 %}
+          <div class="plano-preco-anual d-none" data-ciclo="anual">
+            Economize {{ plano.desconto_anual_pct }}% vs mensal
+          </div>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      <!-- Limites (sempre visíveis, sem estado dev) -->
+      <ul class="plano-features">
+        <li>
+          <span class="feat-icon feat-ok"><i class="bi bi-people-fill"></i></span>
+          <span>
+            {% if plano.clientes_ilimitados %}<strong>Clientes ilimitados</strong>
+            {% else %}Até <strong>{{ plano.limite_clientes }}</strong> clientes{% endif %}
+          </span>
+        </li>
+        <li>
+          <span class="feat-icon feat-ok"><i class="bi bi-archive-fill"></i></span>
+          <span>
+            {% if plano.produtos_ilimitados %}<strong>Produtos ilimitados</strong>
+            {% else %}Até <strong>{{ plano.limite_produtos }}</strong> produtos{% endif %}
+          </span>
+        </li>
+         <li>
+          <span class="feat-icon feat-ok"><i class="bi bi-tags-fill"></i></span>
+          <span>
+            {% if plano.categorias_ilimitados %}
+              <strong>Categorias ilimitadas</strong>
+            {% else %}
+              Até <strong>{{ plano.limite_categorias }}</strong> categorias
+            {% endif %}
+          </span>
+        </li>
+        <li>
+          <span class="feat-icon feat-ok"><i class="bi bi-person-badge-fill"></i></span>
+          <span>
+            {% if plano.usuarios_ilimitados %}<strong>Usuários ilimitados</strong>
+            {% else %}Até <strong>{{ plano.limite_usuarios }}</strong> usuário{% if plano.limite_usuarios != 1 %}s / Licenças{% endif %}{% endif %}
+          </span>
+        </li>
+        <!-- Recursos dinâmicos via RECURSOS_CONFIG -->
+        {% for rec in recursos %}
+        {% with cfg=rec.config estado=rec.estado %}
+        
+        {% if estado == 'ativo' %}
+        {# ── ATIVO: ícone verde, texto normal ── #}
+        <li>
+          <span class="feat-icon feat-ok"><i class="bi {{ cfg.icone }}"></i></span>
+          <span >{{ cfg.display_name }}</span>
+        </li>
+
+        {% elif estado == 'indisponivel' %}
+        {# ── INDISPONÍVEL NO PLANO: ícone × cinza, texto riscado ── #}
+        <li class="feat-no">
+          <span class="feat-icon"><i class="bi bi-x-circle"></i></span>
+          <span>{{ cfg.display_name }}</span>
+        </li>
+
+        {% elif estado == 'em_desenvolvimento' %}
+        {# ── EM DESENVOLVIMENTO: ícone cinza, badge "Em breve" ── #}
+        <li class="feat-dev">
+          <span class="feat-icon"><i class="bi {{ cfg.icone }}"></i></span>
+          <span>
+            <a href="#" data-bs-custom-class="custom-tooltip" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{ cfg.descricao }}">{{ cfg.display_name }}</a>
+          
+              <small class="text-warning ms-1">
+            <i class="bi-clock-history text-warning"></i> 
+            {% if cfg.previsao_lancamento %} · {{ cfg.previsao_lancamento }}{% endif %}
+            ...Em breve
+          </small>
+
+          </span>
+        </li>
+        
+        {% endif %}
+
+        {% endwith %}
+        {% endfor %}
+      </ul>
+      <button class="btn btn-primary w-100" disabled>
+       Contate agente para contratar
+        
+      </button>
+    </div>
+  </div>
+  {% endwith %}
+  {% endfor %}
+</div>
+
+<!-- FAQ / Garantia -->
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="form-card text-center">
+      <i class="bi bi-shield-check-fill text-success mb-2" style="font-size:2rem;"></i>
+      <h5 class="fw-bold">Garantia de 14 dias</h5>
+      <p class="text-muted mb-0">🚀 14 dias. Zero custo. Zero compromisso.
+        Teste alugese completo por 14 dias. 
+        Sem cartão. Sem letras miúdas. Só clique e teste.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+ <script src="https://unpkg.com/@popperjs/core@2"></script>
+<script>
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</script>
+{% endblock %}

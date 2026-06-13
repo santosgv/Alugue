@@ -1,0 +1,65 @@
+{% extends 'base.html' %}{% load filters %}
+{% block title %}{{ cliente.nome }}{% endblock %}
+{% block page_title %}Cliente{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-header-title">{{ cliente.nome }}</h1>
+    <p class="page-header-sub">Cadastrado em {{ cliente.data_cadastro|date:"d/m/Y" }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if user_perfil|can_edit %}
+    <a href="{% url 'clientes:editar' cliente.pk %}" class="btn btn-primary"><i class="bi bi-pencil me-2"></i>Editar</a>
+    {%endif%}
+    <a href="{% url 'clientes:lista' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Voltar</a>
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="form-card">
+      <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">Informações</h6>
+      <dl class="row mb-0">
+        <dt class="col-5 text-muted small">CPF/CNPJ</dt><dd class="col-7">{{ cliente.cpf_cnpj|cpf_cnpj }}</dd>
+        <dt class="col-5 text-muted small">Telefone</dt><dd class="col-7">{{ cliente.telefone|telefone }}</dd>
+        <dt class="col-5 text-muted small">E-mail</dt><dd class="col-7">{{ cliente.email|default:"—" }}</dd>
+        <dt class="col-5 text-muted small">Status</dt>
+        <dd class="col-7"><span class="status-badge {% if cliente.ativo %}badge-ativo{% else %}badge-inativo{% endif %}">{% if cliente.ativo %}Ativo{% else %}Inativo{% endif %}</span></dd>
+        <dt class="col-5 text-muted small">Endereço</dt><dd class="col-7 small">{{ cliente.endereco|default:"—" }}</dd>
+      </dl>
+      {% if cliente.observacoes %}
+      <hr/><p class="text-muted small mb-0">{{ cliente.observacoes }}</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-file-earmark-text me-2"></i>Histórico de Locações</span>
+        {% if user_perfil|can_edit %}
+        <a href="{% url 'locacoes:criar' %}" class="btn btn-sm btn-primary">Nova Locação</a>
+        {%endif%}
+      </div>
+      {% if locacoes %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr><th>Nº</th><th>Período</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+          {% for loc in locacoes %}
+          <tr>
+            <td><a href="{% url 'locacoes:detalhe' loc.pk %}" class="fw-semibold text-decoration-none">#{{ loc.pk }}</a></td>
+            <td class="small">{{ loc.data_inicio|date:"d/m/Y" }} → {{ loc.data_fim_prevista|date:"d/m/Y" }}</td>
+            <td class="fw-semibold">R$ {{ loc.valor_total|money }}</td>
+            <td><span class="status-badge badge-{{ loc.status }}">{{ loc.get_status_display }}</span></td>
+            <td><a href="{% url 'locacoes:detalhe' loc.pk %}" class="btn btn-sm btn-outline-secondary">Ver</a></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-file-earmark"></i><p>Nenhuma locação registrada.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

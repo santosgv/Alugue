@@ -1,0 +1,78 @@
+{% extends 'base.html' %}{% load filters %}
+{% block title %}Locações{% endblock %}
+{% block page_title %}Locações{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-header-title">Locações</h1>
+    <p class="page-header-sub">{{ page_obj.paginator.count }} locação(ões) encontrada(s)</p>
+  </div>
+  {% if user_perfil|can_edit %}
+  <a href="{% url 'locacoes:criar' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nova Locação</a>
+  {%endif%}
+</div>
+<div class="table-card">
+  <div class="p-3 border-bottom">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-6">
+        <div class="search-bar">
+          <i class="bi bi-search"></i>
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por cliente ou número..." />
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select">
+          <option value="">Todos os status</option>
+          {% for val, label in status_choices %}<option value="{{ val }}" {% if status_sel == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-outline-secondary flex-grow-1">Filtrar</button>
+        {% if q or status_sel %}<a href="{% url 'locacoes:lista' %}" class="btn btn-outline-danger">✕</a>{% endif %}
+      </div>
+    </form>
+  </div>
+  {% if locacoes %}
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Nº</th><th>Cliente</th><th>Produtos</th><th>Início</th><th>Devolução</th><th>Valor</th><th>Status</th><th class="text-end">Ações</th></tr></thead>
+      <tbody>
+      {% for loc in locacoes %}
+      <tr>
+        <td><a href="{% url 'locacoes:detalhe' loc.pk %}" class="fw-bold text-decoration-none text-primary">#{{ loc.pk }}</a></td>
+        <td>
+          <a href="{% url 'clientes:detalhe' loc.cliente.pk %}" class="text-decoration-none text-dark fw-semibold">{{ loc.cliente.nome }}</a>
+        </td>
+        <td class="small">
+          {% for item in loc.itens.all %}<span class="badge bg-light text-dark border me-1">{{ item.quantidade }}x {{ item.produto.nome }}</span>{% endfor %}
+        </td>
+        <td class="small">{{ loc.data_inicio|date:"d/m/Y" }}</td>
+        <td>
+          <span class="{% if loc.esta_atrasada %}text-danger fw-bold{% elif loc.vence_amanha %}text-warning fw-semibold{% else %}text-dark{% endif %} small">
+            {{ loc.data_fim_prevista|date:"d/m/Y" }}
+            {% if loc.esta_atrasada %}<i class="bi bi-exclamation-circle ms-1"></i>{% endif %}
+          </span>
+        </td>
+        <td class="fw-semibold">R$ {{ loc.valor_total|money }}</td>
+        <td><span class="status-badge badge-{{ loc.status }}">{{ loc.get_status_display }}</span></td>
+        <td class="text-end">
+          <div class="btn-group btn-group-sm">
+            <a href="{% url 'locacoes:detalhe' loc.pk %}" class="btn btn-outline-secondary" title="Ver"><i class="bi bi-eye"></i></a>
+            {% if loc.status in 'ativa,pendente' %}
+            {% if user_perfil|can_edit %}
+            <a href="{% url 'locacoes:editar' loc.pk %}" class="btn btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+            {%endif%}
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'partials/paginacao.html' %}
+  {% else %}
+  <div class="empty-state"><i class="bi bi-file-earmark-text"></i><p>Nenhuma locação encontrada.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

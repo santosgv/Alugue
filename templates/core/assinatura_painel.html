@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}Minha Assinatura{% endblock %}
+{% block page_title %}Assinatura{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-header-title">Minha Assinatura</h1>
+    <p class="page-header-sub">Gerencie seu plano e acompanhe o uso</p>
+  </div>
+  <a href="{% url 'planos' %}" class="btn btn-primary"><i class="bi bi-arrow-up-circle me-2"></i>Ver Planos</a>
+</div>
+
+{% if assinatura %}
+<!-- Card status da assinatura -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-5">
+    <div class="form-card h-100">
+      <div class="d-flex align-items-start gap-3 mb-4">
+        <div style="width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:{{ assinatura.plano.cor }}18;color:{{ assinatura.plano.cor }};flex-shrink:0;">
+          <i class="bi {{ assinatura.plano.icone }}"></i>
+        </div>
+        <div>
+          <h5 class="fw-bold mb-0">Plano {{ assinatura.plano.nome }}</h5>
+          <span class="status-badge mt-1
+            {% if assinatura.status == 'ativa' %}badge-ativa
+            {% elif assinatura.status == 'trial' %}badge-pendente
+            {% elif assinatura.status == 'suspensa' %}badge-atrasada
+            {% else %}badge-cancelada{% endif %}">
+            {{ assinatura.get_status_display }}
+          </span>
+        </div>
+      </div>
+
+      <dl class="row small mb-0">
+        <dt class="col-5 text-muted">Ciclo</dt>
+        <dd class="col-7">{{ assinatura.get_ciclo_display }}</dd>
+
+        <dt class="col-5 text-muted">Início</dt>
+        <dd class="col-7">{{ assinatura.data_inicio|date:"d/m/Y" }}</dd>
+
+        {% if assinatura.data_fim %}
+        <dt class="col-5 text-muted">
+          {% if assinatura.status == 'trial' %}Trial expira{% else %}Renova em{% endif %}
+        </dt>
+        <dd class="col-7">
+          <span class="fw-semibold {% if assinatura.dias_restantes <= 7 %}text-danger{% endif %}">
+            {{ assinatura.data_fim|date:"d/m/Y" }}
+          </span>
+          {% if assinatura.dias_restantes is not None %}
+          <span class="text-muted small">({{ assinatura.dias_restantes }} dia(s))</span>
+          {% endif %}
+        </dd>
+        {% endif %}
+
+        {% if assinatura.valor_cobrado %}
+        <dt class="col-5 text-muted">Valor</dt>
+        <dd class="col-7 fw-semibold">R$ {{ assinatura.valor_cobrado }}/{{ assinatura.get_ciclo_display|lower }}</dd>
+        {% endif %}
+      </dl>
+
+      {% if assinatura.esta_ativa and assinatura.status != 'trial' %}
+      <div class="mt-4">
+        {% if user_is_admin %}
+        <a href="{% url 'cancelar_assinatura' %}" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-x-circle me-1"></i>Cancelar Assinatura
+        </a>
+        {%endif%}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Uso do plano -->
+  {% if uso_plano %}
+  <div class="col-lg-7">
+    <div class="form-card h-100">
+      <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+        <i class="bi bi-bar-chart-fill me-2"></i>Uso do Plano
+      </h6>
+      {% for chave, dados in uso_plano.items %}
+      <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="fw-semibold small text-capitalize">
+            {% if chave == 'clientes' %}<i class="bi bi-people me-1 text-blue-500"></i>Clientes
+            {% elif chave == 'produtos' %}<i class="bi bi-archive me-1"></i>Produtos
+            {% elif chave == 'categorias' %}<i class="bi bi-tags"></i>Categorias
+            {% elif chave == 'usuarios' %}<i class="bi bi-person-badge"></i>Usuarios
+            {% else %}<i class="bi bi-file-earmark-text me-1"></i>Locações Ativas{% endif %}
+          </span>
+          <span class="small text-muted">
+            {{ dados.atual }} /
+            {% if dados.ilimitado %}<span class="text-success fw-semibold">Ilimitado</span>
+            {% else %}{{ dados.limite }}{% endif %}
+          </span>
+        </div>
+        {% if not dados.ilimitado %}
+        <div class="progress progress-sm">
+          <div class="progress-bar bg-{{ dados.status }}" style="width:{{ dados.pct }}%;"></div>
+        </div>
+        <div class="small text-muted mt-1">{{ dados.pct }}% utilizado</div>
+        {% if dados.status == 'danger' %}
+        <div class="small text-danger mt-1">
+          <i class="bi bi-exclamation-triangle me-1"></i>Limite atingido.
+          <a href="{% url 'planos' %}" class="text-danger fw-semibold">Fazer upgrade</a>
+        </div>
+        {% elif dados.status == 'warning' %}
+        <div class="small text-warning mt-1">
+          <i class="bi bi-exclamation-circle me-1"></i>Próximo do limite.
+          <a href="{% url 'planos' %}" class="text-warning fw-semibold">Ver planos maiores</a>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="progress progress-sm">
+          <div class="progress-bar bg-success" style="width:100%;"></div>
+        </div>
+        <div class="small text-success mt-1">Ilimitado — sem restrições</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Recursos disponíveis -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="table-card">
+      <div class="card-header"><i class="bi bi-check2-square me-2"></i>Recursos do Seu Plano</div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr><th>Recurso</th><th class="text-center">Seu Plano</th><th>Descrição</th></tr></thead>
+          <tbody>
+            {% with p=assinatura.plano %}
+            <tr>
+              <td class="fw-semibold"><i class="bi bi-whatsapp me-2 text-success"></i>Alertas WhatsApp</td>
+              <td class="text-center">{% if p.tem_whatsapp %}<i class="bi bi-check-circle-fill text-success fs-5"></i>{% else %}<i class="bi bi-x-circle-fill text-muted fs-5"></i>{% endif %}</td>
+              <td class="text-muted small">Notificações automáticas de vencimento e atraso via WhatsApp.</td>
+            </tr>
+            <tr>
+              <td class="fw-semibold"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Relatórios Avançados</td>
+              <td class="text-center">{% if p.tem_relatorios %}<i class="bi bi-check-circle-fill text-success fs-5"></i>{% else %}<i class="bi bi-x-circle-fill text-muted fs-5"></i>{% endif %}</td>
+              <td class="text-muted small">Exportação de relatórios em PDF/Excel e gráficos de desempenho.</td>
+            </tr>
+            <tr>
+              <td class="fw-semibold"><i class="bi bi-people-fill me-2 text-purple" style="color:#8b5cf6"></i>Multiusuário</td>
+              <td class="text-center">{% if p.tem_multiusuario %}<i class="bi bi-check-circle-fill text-success fs-5"></i>{% else %}<i class="bi bi-x-circle-fill text-muted fs-5"></i>{% endif %}</td>
+              <td class="text-muted small">Múltiplos usuários com controle de permissões por perfil.</td>
+            </tr>
+            <tr>
+              <td class="fw-semibold"><i class="bi bi-code-slash me-2 text-info"></i>Acesso à API</td>
+              <td class="text-center">{% if p.tem_api %}<i class="bi bi-check-circle-fill text-success fs-5"></i>{% else %}<i class="bi bi-x-circle-fill text-muted fs-5"></i>{% endif %}</td>
+              <td class="text-muted small">Integre com sistemas externos via API REST documentada.</td>
+            </tr>
+            <tr>
+              <td class="fw-semibold"><i class="bi bi-headset me-2 text-warning"></i>Suporte Prioritário</td>
+              <td class="text-center">{% if p.tem_suporte_prioritario %}<i class="bi bi-check-circle-fill text-success fs-5"></i>{% else %}<i class="bi bi-x-circle-fill text-muted fs-5"></i>{% endif %}</td>
+              <td class="text-muted small">Atendimento com SLA de 4 horas em horário comercial.</td>
+            </tr>
+            {% endwith %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Histórico de assinaturas -->
+{% if historico %}
+<div class="table-card">
+  <div class="card-header"><i class="bi bi-clock-history me-2"></i>Histórico de Assinaturas</div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Plano</th><th>Ciclo</th><th>Início</th><th>Fim</th><th>Valor</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for sub in historico %}
+      <tr>
+        <td class="fw-semibold">{{ sub.plano.nome }}</td>
+        <td>{{ sub.get_ciclo_display }}</td>
+        <td>{{ sub.data_inicio|date:"d/m/Y" }}</td>
+        <td>{{ sub.data_fim|date:"d/m/Y"|default:"—" }}</td>
+        <td>{% if sub.valor_cobrado %}R$ {{ sub.valor_cobrado }}{% else %}—{% endif %}</td>
+        <td>
+          <span class="status-badge
+            {% if sub.status == 'ativa' %}badge-ativa
+            {% elif sub.status == 'trial' %}badge-pendente
+            {% elif sub.status == 'cancelada' %}badge-cancelada
+            {% elif sub.status == 'expirada' %}badge-finalizada
+            {% else %}badge-atrasada{% endif %}">
+            {{ sub.get_status_display }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Sem assinatura -->
+<div class="empty-state py-5">
+  <i class="bi bi-credit-card" style="font-size:3.5rem;color:#cbd5e1;"></i>
+  <h5 class="mt-3 fw-bold">Nenhuma assinatura ativa</h5>
+  <p class="text-muted">Escolha um plano para começar a usar o LocaGest.</p>
+  <a href="{% url 'planos' %}" class="btn btn-primary mt-2">Ver Planos</a>
+</div>
+{% endif %}
+{% endblock %}

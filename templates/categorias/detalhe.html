@@ -1,0 +1,72 @@
+{% extends 'base.html' %}{% load filters %}
+
+{% block title %}{{ categoria.nome }}{% endblock %}
+{% block page_title %}Detalhes da Categoria{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">
+            {{ categoria.nome }}
+        </h1>
+        <p class="page-header-sub">
+            Informações da categoria
+        </p>
+    </div>
+    
+    <div class="d-flex gap-2">
+        {% if user_perfil|can_edit %}
+        <a href="{% url 'produtos:editar-categoria' categoria.pk %}"
+           class="btn btn-primary">
+            <i class="bi bi-pencil"></i>
+            Editar
+        </a>
+        {%endif%}
+
+        <a href="{% url 'produtos:lista-categorias' %}"
+           class="btn btn-outline-secondary">
+            Voltar
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-6">
+                <label class="text-muted small">
+                    Nome
+                </label>
+
+                <h5>
+                    {{ categoria.nome }}
+                </h5>
+            </div>
+
+            <div class="col-md-6">
+                <label class="text-muted small">
+                    ID
+                </label>
+
+                <h5>
+                    #{{ categoria.id }}
+                </h5>
+            </div>
+
+        </div>
+
+        <hr>
+
+        <label class="text-muted small">
+            Descrição
+        </label>
+
+        <p>
+            {{ categoria.descricao|default:"Nenhuma descrição cadastrada." }}
+        </p>
+
+    </div>
+</div>
+{% endblock %}

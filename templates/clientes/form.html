@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-header-title">{{ titulo }}</h1>
+  </div>
+  <a href="{% url 'clientes:lista' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Voltar</a>
+</div>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="form-card">
+        <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">Dados Pessoais</h6>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label">Nome *</label>
+            {{ form.nome }}
+            {% if form.nome.errors %}<div class="text-danger small mt-1">{{ form.nome.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">CPF/CNPJ *</label>
+            {{ form.cpf_cnpj }}
+            {% if form.cpf_cnpj.errors %}<div class="text-danger small mt-1" data-mask="000.000.000-00">{{ form.cpf_cnpj.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Telefone *</label>
+            {{ form.telefone }}
+            {% if form.telefone.errors %}<div class="text-danger small mt-1">{{ form.telefone.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">E-mail</label>
+            {{ form.email }}
+          </div>
+          <div class="col-12">
+            <label class="form-label">Endereço</label>
+            {{ form.endereco }}
+          </div>
+          <div class="col-12">
+            <label class="form-label">Observações</label>
+            {{ form.observacoes }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="form-card">
+        <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">Configurações</h6>
+        <div class="form-check form-switch">
+          {{ form.ativo }}
+          <label class="form-check-label" for="{{ form.ativo.id_for_label }}">Cliente Ativo</label>
+        </div>
+        <hr />
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check-lg me-2"></i>{{ botao }}</button>
+        <a href="{% url 'clientes:lista' %}" class="btn btn-outline-secondary w-100 mt-2">Cancelar</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% block extra_js %}
+<script>
+$(document).ready(function () {
+
+    // ── Telefone ──
+    var comportamento_telefone = function (val) {
+        return val.replace(/\D/g, '').length === 11
+            ? '(00) 00000-0000'
+            : '(00) 0000-00009';
+    };
+    $('#id_telefone').mask(comportamento_telefone, {
+        onKeyPress: function (val, e, field, options) {
+            field.mask(comportamento_telefone(val), options);
+        }
+    });
+
+    // ── CPF / CNPJ ──
+    var comportamento_cpf_cnpj = function (val) {
+        return val.replace(/\D/g, '').length <= 11
+            ? '000.000.000-009'
+            : '00.000.000/0000-00';
+    };
+    $('#id_cpf_cnpj').mask(comportamento_cpf_cnpj, {
+        onKeyPress: function (val, e, field, options) {
+            field.mask(comportamento_cpf_cnpj(val), options);
+        }
+    });
+
+    // ── E-mail: validação visual em tempo real ──
+    var regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+    $('#id_email').on('input', function () {
+        var val = $(this).val().trim();
+
+        // Campo vazio — volta ao estado neutro
+        if (val === '') {
+            $(this)
+                .removeClass('is-valid is-invalid')
+                .siblings('.email-feedback')
+                .remove();
+            return;
+        }
+
+        if (regexEmail.test(val)) {
+            $(this)
+                .removeClass('is-invalid')
+                .addClass('is-valid');
+            // Remove feedback de erro se existia
+            $(this).siblings('.email-feedback').remove();
+        } else {
+            $(this)
+                .removeClass('is-valid')
+                .addClass('is-invalid');
+            // Cria o feedback só se ainda não existir
+            if ($(this).siblings('.email-feedback').length === 0) {
+                $(this).after(
+                    '<div class="email-feedback invalid-feedback" style="display:block">' +
+                    'Digite um e-mail válido. Ex: nome@dominio.com' +
+                    '</div>'
+                );
+            }
+        }
+    });
+
+    // ── Limpa feedback do e-mail se o campo for apagado manualmente ──
+    $('#id_email').on('blur', function () {
+        if ($(this).val().trim() === '') {
+            $(this)
+                .removeClass('is-valid is-invalid')
+                .siblings('.email-feedback')
+                .remove();
+        }
+    });
+
+    // ── Bloqueia submit se e-mail inválido ──
+    $('form').on('submit', function (e) {
+        var email = $('#id_email').val().trim();
+        if (email !== '' && !regexEmail.test(email)) {
+            e.preventDefault();
+            $('#id_email')
+                .addClass('is-invalid')
+                .focus();
+        }
+    });
+
+});
+</script>
+{% endblock %}
+{% endblock %}

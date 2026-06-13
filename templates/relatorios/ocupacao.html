@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}Ocupação do Estoque{% endblock %}
+{% block page_title %}Relatório — Ocupação do Estoque{% endblock %}
+{% block extra_css %}{% include 'relatorios/base_relatorio.html' %}{% endblock %}
+
+{% block content %}
+<div class="rel-header">
+  <div>
+    <h1>Ocupação do Estoque</h1>
+    <p>Taxa de uso dos produtos hoje ({{ data_ref|date:"d/m/Y" }})</p>
+  </div>
+  <a href="{% url 'relatorios:index' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Relatórios
+  </a>
+</div>
+
+<!-- KPI Geral -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="rel-kpi kpi-blue">
+      <div class="rel-kpi-icon"><i class="bi bi-archive-fill"></i></div>
+      <div class="rel-kpi-value">{{ total_estoque }}</div>
+      <div class="rel-kpi-label">Unidades no estoque</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="rel-kpi kpi-amber">
+      <div class="rel-kpi-icon"><i class="bi bi-boxes"></i></div>
+      <div class="rel-kpi-value">{{ total_em_uso }}</div>
+      <div class="rel-kpi-label">Unidades em uso hoje</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="rel-kpi {% if pct_geral >= 80 %}kpi-red{% elif pct_geral >= 50 %}kpi-amber{% else %}kpi-green{% endif %}">
+      <div class="rel-kpi-icon"><i class="bi bi-percent"></i></div>
+      <div class="rel-kpi-value">{{ pct_geral }}%</div>
+      <div class="rel-kpi-label">Taxa de ocupação geral</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="rel-kpi kpi-green">
+      <div class="rel-kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
+      <div class="rel-kpi-value">{{ total_estoque|add:"-"|add:total_em_uso }}</div>
+      <div class="rel-kpi-label">Unidades disponíveis</div>
+    </div>
+  </div>
+</div>
+
+<!-- Barra de ocupação geral -->
+<div class="table-card p-4 mb-4">
+  <div class="d-flex justify-content-between small mb-2">
+    <span class="fw-semibold text-muted text-uppercase" style="letter-spacing:.6px;font-size:.72rem;">Ocupação total do estoque</span>
+    <span class="fw-bold">{{ total_em_uso }} / {{ total_estoque }} unidades</span>
+  </div>
+  <div class="bar-bg" style="height:14px;border-radius:8px;">
+    <div class="bar-fill" style="height:14px;border-radius:8px;width:{{ pct_geral }}%;
+         background:{% if pct_geral >= 80 %}#ef4444{% elif pct_geral >= 50 %}#f59e0b{% else %}#22c55e{% endif %};">
+    </div>
+  </div>
+</div>
+
+<!-- Por categoria -->
+{% for cat in por_categoria %}
+<div class="table-card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">
+      <i class="bi bi-tag me-2 text-muted"></i>{{ cat.categoria }}
+    </span>
+    <span class="badge {% if cat.pct_geral >= 80 %}bg-danger{% elif cat.pct_geral >= 50 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+      {{ cat.pct_geral }}% ocupado
+    </span>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th class="text-center">Em uso</th>
+          <th class="text-center">Disponível</th>
+          <th class="text-center">Total</th>
+          <th style="width:30%;">Ocupação</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in cat.itens %}
+      <tr>
+        <td>
+          <div class="fw-semibold">{{ item.produto.nome }}</div>
+          <div class="text-muted small font-monospace">{{ item.produto.codigo_interno }}</div>
+        </td>
+        <td class="text-center">
+          <span class="fw-bold {% if item.em_uso > 0 %}text-warning{% else %}text-muted{% endif %}">
+            {{ item.em_uso }}
+          </span>
+        </td>
+        <td class="text-center">
+          <span class="fw-bold {% if item.disponivel == 0 %}text-danger{% else %}text-success{% endif %}">
+            {{ item.disponivel }}
+          </span>
+        </td>
+        <td class="text-center text-muted">{{ item.total }}</td>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <div class="bar-bg flex-grow-1">
+              <div class="bar-fill" style="width:{{ item.pct_ocupacao }}%;background:
+                {% if item.pct_ocupacao >= 90 %}#ef4444
+                {% elif item.pct_ocupacao >= 60 %}#f59e0b
+                {% else %}#22c55e{% endif %};">
+              </div>
+            </div>
+            <span class="small fw-semibold
+              {% if item.pct_ocupacao >= 90 %}text-danger
+              {% elif item.pct_ocupacao >= 60 %}text-warning
+              {% else %}text-success{% endif %}"
+              style="width:36px;text-align:right;">
+              {{ item.pct_ocupacao }}%
+            </span>
+          </div>
+          {% if item.disponivel == 0 %}
+          <div class="small text-danger mt-1">
+            <i class="bi bi-x-circle me-1"></i>Esgotado
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% empty %}
+<div class="empty-rel">
+  <i class="bi bi-archive"></i>
+  <p>Nenhum produto ativo cadastrado.</p>
+</div>
+{% endfor %}
+{% endblock %}

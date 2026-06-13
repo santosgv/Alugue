@@ -1,0 +1,120 @@
+{% extends 'base.html' %}{% load filters %}
+{% block title %}Locações Atrasadas{% endblock %}
+{% block page_title %}Relatório — Locações Atrasadas{% endblock %}
+{% block extra_css %}{% include 'relatorios/base_relatorio.html' %}{% endblock %}
+
+{% block content %}
+<div class="rel-header">
+  <div>
+    <h1>Locações Atrasadas</h1>
+    <p>Clientes que ultrapassaram a data de devolução prevista</p>
+  </div>
+  <a href="{% url 'relatorios:index' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Relatórios
+  </a>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="rel-kpi kpi-red">
+      <div class="rel-kpi-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <div class="rel-kpi-value">{{ total }}</div>
+      <div class="rel-kpi-label">Locações em atraso</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="rel-kpi kpi-amber">
+      <div class="rel-kpi-icon"><i class="bi bi-currency-dollar"></i></div>
+      <div class="rel-kpi-value" style="font-size:1.3rem;">R$ {{ total_valor|money }}</div>
+      <div class="rel-kpi-label">Valor total em aberto</div>
+    </div>
+  </div>
+  {% if locacoes %}
+  <div class="col-6 col-md-3">
+    <div class="rel-kpi kpi-blue">
+      <div class="rel-kpi-icon"><i class="bi bi-clock-fill"></i></div>
+      <div class="rel-kpi-value">{{ locacoes.0.dias_atraso }}</div>
+      <div class="rel-kpi-label">Maior atraso (dias)</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Filtro de ordenação -->
+<div class="rel-filtros mb-3">
+  <span class="rel-filtros .form-label fw-semibold small text-muted">Ordenar por:</span>
+  <a href="?ordenar=dias_atraso"
+     class="btn btn-sm {% if ordenar == 'dias_atraso' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+    Dias de atraso
+  </a>
+  <a href="?ordenar=valor"
+     class="btn btn-sm {% if ordenar == 'valor' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+    Maior valor
+  </a>
+</div>
+
+<!-- Tabela -->
+{% if locacoes %}
+<div class="table-card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Locação</th>
+        <th>Cliente</th>
+        <th>Produtos</th>
+        <th>Previsto</th>
+        <th class="text-center">Atraso</th>
+        <th class="text-end">Valor</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in locacoes %}
+    <tr>
+      <td>
+        <a href="{% url 'locacoes:detalhe' item.locacao.pk %}"
+           class="fw-bold text-decoration-none text-primary">#{{ item.locacao.pk }}</a>
+      </td>
+      <td>
+        <div class="fw-semibold">{{ item.locacao.cliente.nome }}</div>
+        <div class="text-muted small">{{ item.locacao.cliente.telefone }}</div>
+      </td>
+      <td class="small text-muted">
+        {% for p in item.produtos %}<span class="badge bg-light text-dark border me-1">{{ p }}</span>{% endfor %}
+      </td>
+      <td class="small">{{ item.locacao.data_fim_prevista|date:"d/m/Y" }}</td>
+      <td class="text-center">
+        <span class="badge-atraso
+          {% if item.dias_atraso >= 10 %}atraso-critico
+          {% elif item.dias_atraso >= 5 %}atraso-alto
+          {% else %}atraso-medio{% endif %}">
+          <i class="bi bi-clock"></i>
+          {{ item.dias_atraso }} dia{{ item.dias_atraso|pluralize }}
+        </span>
+      </td>
+      <td class="text-end fw-bold">R$ {{ item.valor_total|money }}</td>
+      <td>
+        <a href="{% url 'locacoes:detalhe' item.locacao.pk %}"
+           class="btn btn-sm btn-outline-danger">Ver</a>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-light">
+        <td colspan="5" class="text-end fw-bold small">Total em aberto:</td>
+        <td class="text-end fw-bold text-danger">R$ {{ total_valor|money }}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% else %}
+<div class="empty-rel">
+  <i class="bi bi-check-circle text-success"></i>
+  <p class="fw-semibold text-success">Nenhuma locação em atraso!</p>
+  <p class="small text-muted">Todas as devoluções estão dentro do prazo.</p>
+</div>
+{% endif %}
+{% endblock %}

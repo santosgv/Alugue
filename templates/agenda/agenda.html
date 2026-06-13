@@ -1,0 +1,112 @@
+{% extends 'base.html' %}{% load filters %}
+{% block title %}Agenda{% endblock %}
+{% block page_title %}Agenda de Locações{% endblock %}
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css' rel='stylesheet' />
+<style>
+  .fc { font-family: 'Inter', sans-serif; }
+  .fc .fc-toolbar-title { font-size: 1rem; font-weight: 700; }
+  .fc .fc-button { border-radius: 8px !important; font-size: .82rem !important; }
+  .fc .fc-button-primary { background: #3b82f6 !important; border-color: #3b82f6 !important; }
+  .fc-event { border-radius: 6px !important; font-size: .75rem !important; padding: 2px 6px !important; cursor: pointer; }
+  .fc-day-today { background: #eff6ff !important; }
+  #cal-popover {
+    position: fixed; z-index: 9999; background: #fff;
+    border-radius: 14px; padding: 18px; width: 280px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18); display: none;
+    border: 1px solid #e2e8f0;
+  }
+  #cal-popover h6 { font-size:.9rem; font-weight:700; margin-bottom:10px; }
+  #cal-popover dl { font-size:.8rem; margin:0; }
+  #cal-popover dt { color: #64748b; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-header-title">Agenda</h1>
+    <p class="page-header-sub">Visualize todas as locações no calendário</p>
+  </div>
+  {% if user_perfil|can_edit %}
+  <a href="{% url 'locacoes:criar' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nova Locação</a>
+  {%endif%}
+</div>
+
+<!-- Legenda -->
+<div class="d-flex gap-3 mb-3 flex-wrap">
+  {% for status, label, color in legenda %}
+  <div class="d-flex align-items-center gap-2 small">
+    <span style="width:12px;height:12px;border-radius:3px;background:{{ color }};display:inline-block;"></span>
+    {{ label }}
+  </div>
+  {% endfor %}
+  <div class="d-flex align-items-center gap-2 small"><span style="width:12px;height:12px;border-radius:3px;background:#198754;display:inline-block;"></span>Ativa</div>
+  <div class="d-flex align-items-center gap-2 small"><span style="width:12px;height:12px;border-radius:3px;background:#ffc107;display:inline-block;"></span>Pendente</div>
+  <div class="d-flex align-items-center gap-2 small"><span style="width:12px;height:12px;border-radius:3px;background:#dc3545;display:inline-block;"></span>Atrasada</div>
+</div>
+
+<div class="form-card">
+  <div id="calendar"></div>
+</div>
+
+<!-- Popover de detalhes -->
+<div id="cal-popover">
+  <div class="d-flex justify-content-between align-items-start mb-2">
+    <h6 id="pop-titulo" class="mb-0"></h6>
+    <button onclick="document.getElementById('cal-popover').style.display='none'" style="background:none;border:none;font-size:1.1rem;color:#94a3b8;cursor:pointer;">×</button>
+  </div>
+  <dl class="row">
+    <dt class="col-4">Cliente</dt><dd class="col-8" id="pop-cliente"></dd>
+    <dt class="col-4">Produtos</dt><dd class="col-8" id="pop-produtos"></dd>
+    <dt class="col-4">Status</dt><dd class="col-8" id="pop-status"></dd>
+    <dt class="col-4">Valor</dt><dd class="col-8" id="pop-valor"></dd>
+  </dl>
+  <a id="pop-link" href="#" class="btn btn-sm btn-primary w-100 mt-2">Ver detalhes</a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const calEl = document.getElementById('calendar');
+  const popover = document.getElementById('cal-popover');
+
+  const calendar = new FullCalendar.Calendar(calEl, {
+    locale: 'pt-br',
+    initialView: 'dayGridMonth',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,listWeek'
+    },
+    buttonText: { today:'Hoje', month:'Mês', week:'Semana', list:'Lista' },
+    events: '{% url "agenda:eventos_json" %}',
+    eventClick: function(info) {
+      const p = info.event.extendedProps;
+      document.getElementById('pop-titulo').textContent = 'Locação #' + info.event.id;
+      document.getElementById('pop-cliente').textContent = p.cliente;
+      document.getElementById('pop-produtos').textContent = p.produtos;
+      document.getElementById('pop-status').textContent = p.status;
+      document.getElementById('pop-valor').textContent = 'R$ ' + p.valor;
+      document.getElementById('pop-link').href = p.url;
+      const rect = info.el.getBoundingClientRect();
+      popover.style.display = 'block';
+      popover.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+      let left = rect.left + window.scrollX;
+      if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+      popover.style.left = left + 'px';
+      info.jsEvent.stopPropagation();
+    },
+    eventDidMount: function(info) {
+      info.el.title = info.event.extendedProps.cliente + ' — ' + info.event.extendedProps.produtos;
+    },
+    height: 'auto',
+    dayMaxEvents: 4,
+  });
+  calendar.render();
+
+  document.addEventListener('click', () => { popover.style.display = 'none'; });
+});
+</script>
+{% endblock %}

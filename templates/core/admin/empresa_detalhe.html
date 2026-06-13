@@ -1,0 +1,319 @@
+{% extends 'core/admin/base_admin.html' %}
+{% block title %}{{ empresa.nome }}{% endblock %}
+{% block page_title %}{{ empresa.nome }}{% endblock %}
+
+{% block content %}
+
+<!-- Credenciais recém-criadas -->
+{% if credenciais_novas %}
+{% with c=credenciais_novas %}
+<div class="alert alert-success alert-dismissible fade show mb-4">
+  <div class="d-flex gap-3 align-items-start">
+    <i class="bi bi-key-fill fs-3"></i>
+    <div>
+      <div class="fw-bold mb-2">Usuário criado — anote as credenciais agora!</div>
+      <div class="font-monospace p-2 rounded-2" style="background:rgba(0,0,0,.07);font-size:.85rem;">
+        <div><strong>Username:</strong> {{ c.username }}</div>
+        <div><strong>E-mail:</strong>   {{ c.email }}</div>
+        <div><strong>Senha:</strong>    {{ c.senha }}</div>
+      </div>
+      <div class="small text-muted mt-1">Esta senha não será exibida novamente.</div>
+    </div>
+  </div>
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endwith %}
+{% endif %}
+
+<div class="adm-page-header">
+  <div>
+    <h1>{{ empresa.nome }}</h1>
+    <p>Cadastrada em {{ empresa.data_cadastro|date:"d/m/Y" }}
+      {% if assinatura_ativa %}
+        · <span class="sb sb-{{ assinatura_ativa.status }}">{{ assinatura_ativa.get_status_display }}</span>
+      {% else %}
+        · <span class="text-muted small">Sem assinatura ativa</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'admin_empresa_editar' empresa.pk %}" class="btn btn-outline-secondary">
+      <i class="bi bi-pencil me-1"></i>Editar
+    </a>
+    <a href="{% url 'admin_empresas' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Voltar
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Coluna esquerda ── -->
+  <div class="col-lg-4">
+
+    <!-- Dados -->
+    <div class="adm-form-card mb-4">
+      <div class="adm-section-title"><i class="bi bi-building me-2"></i>Dados</div>
+      <dl class="row small mb-0">
+        <dt class="col-5 text-muted">CNPJ</dt>      <dd class="col-7 font-monospace">{{ empresa.cnpj|default:"—" }}</dd>
+        <dt class="col-5 text-muted">E-mail</dt>    <dd class="col-7">{{ empresa.email|default:"—" }}</dd>
+        <dt class="col-5 text-muted">Telefone</dt>  <dd class="col-7">{{ empresa.telefone|default:"—" }}</dd>
+        <dt class="col-5 text-muted">Status</dt>
+        <dd class="col-7"><span class="sb {% if empresa.ativo %}sb-ativa{% else %}sb-cancelada{% endif %}">{% if empresa.ativo %}Ativa{% else %}Inativa{% endif %}</span></dd>
+      </dl>
+    </div>
+
+    <!-- Assinatura atual -->
+    <div class="adm-form-card mb-4">
+      <div class="adm-section-title"><i class="bi bi-credit-card me-2"></i>Assinatura</div>
+      {% if assinatura_ativa %}
+      <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3" style="background:#f8fafc;">
+        <div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;background:{{ assinatura_ativa.plano.cor }}18;color:{{ assinatura_ativa.plano.cor }};flex-shrink:0;">
+          <i class="bi {{ assinatura_ativa.plano.icone }}"></i>
+        </div>
+        <div>
+          <div class="fw-bold small">{{ assinatura_ativa.plano.nome }}</div>
+          <div class="text-muted" style="font-size:.75rem;">{{ assinatura_ativa.get_ciclo_display }}</div>
+        </div>
+        <span class="sb sb-{{ assinatura_ativa.status }} ms-auto">{{ assinatura_ativa.get_status_display }}</span>
+      </div>
+      <dl class="row small mb-3">
+        <dt class="col-6 text-muted">Início</dt>
+        <dd class="col-6">{{ assinatura_ativa.data_inicio|date:"d/m/Y" }}</dd>
+        {% if assinatura_ativa.data_fim %}
+        <dt class="col-6 text-muted">{% if assinatura_ativa.status == 'trial' %}Expira{% else %}Renova{% endif %}</dt>
+        <dd class="col-6">
+          <span class="fw-semibold {% if assinatura_ativa.dias_restantes <= 7 %}text-danger{% endif %}">
+            {{ assinatura_ativa.data_fim|date:"d/m/Y" }}
+          </span>
+          {% if assinatura_ativa.dias_restantes is not None %}
+          <span class="text-muted">({{ assinatura_ativa.dias_restantes }}d)</span>
+          {% endif %}
+        </dd>
+        {% endif %}
+        {% if assinatura_ativa.valor_cobrado %}
+        <dt class="col-6 text-muted">Valor</dt>
+        <dd class="col-6 fw-bold">R$ {{ assinatura_ativa.valor_cobrado }}</dd>
+        {% endif %}
+      </dl>
+
+      <!-- Renovar -->
+      <form method="post" action="{% url 'admin_renovar_assinatura' assinatura_ativa.pk %}">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+          <select name="ciclo" class="form-select form-select-sm">
+            <option value="mensal" {% if assinatura_ativa.ciclo == 'mensal' %}selected{% endif %}>Mensal</option>
+            <option value="anual"  {% if assinatura_ativa.ciclo == 'anual'  %}selected{% endif %}>Anual</option>
+          </select>
+          <button type="submit" class="btn btn-sm btn-outline-success flex-shrink-0"
+                  onclick="return confirm('Renovar assinatura?')">
+            <i class="bi bi-arrow-clockwise me-1"></i>Renovar
+          </button>
+        </div>
+      </form>
+      {% else %}
+      <div class="text-muted small text-center py-2">Sem assinatura ativa.</div>
+      {% endif %}
+    </div>
+
+    <!-- Uso do plano -->
+    {% if uso_plano %}
+    <div class="adm-form-card">
+      <div class="adm-section-title"><i class="bi bi-bar-chart me-2"></i>Uso do Plano</div>
+      {% for chave, dados in uso_plano.items %}
+      <div class="mb-3">
+        <div class="d-flex justify-content-between small mb-1">
+          <span class="text-muted">{% if chave == 'clientes' %}Clientes{% elif chave == 'produtos' %}Produtos{% elif chave == 'categorias'%}Categorias{% elif chave == 'usuarios'%}Usuarios{% else %}Locações{% endif %}</span>
+          <span class="fw-semibold">{{ dados.atual }} / {% if dados.ilimitado %}<span class="text-success">∞</span>{% else %}{{ dados.limite }}{% endif %}</span>
+        </div>
+        <div class="progress progress-sm">
+          <div class="progress-bar bg-{% if dados.ilimitado %}success{% else %}{{ dados.status }}{% endif %}"
+               style="width:{% if dados.ilimitado %}25{% else %}{{ dados.pct }}{% endif %}%;{% if dados.ilimitado %}opacity:.4;{% endif %}"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ── Coluna direita ── -->
+  <div class="col-lg-8">
+
+    <!-- Mudar plano -->
+    <div class="adm-card mb-4">
+      <div class="adm-card-header">
+        <span><i class="bi bi-arrow-up-circle me-2" style="color:#6366f1;"></i>
+          {% if assinatura_ativa %}Mudar Plano{% else %}Ativar Assinatura{% endif %}
+        </span>
+      </div>
+      <div class="p-4">
+        <form method="post" action="{% url 'admin_atribuir_assinatura' empresa.pk %}">
+          {% csrf_token %}
+          <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+              <label class="form-label">Plano</label>
+              {{ form_assinatura.plano }}
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Ciclo</label>
+              {{ form_assinatura.ciclo }}
+            </div>
+            <div class="col-md-2 d-flex align-items-end pb-1">
+              <div class="form-check">
+                {{ form_assinatura.trial }}
+                <label class="form-check-label small" for="{{ form_assinatura.trial.id_for_label }}">Trial</label>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-indigo w-100" onclick="return confirm('Confirmar mudança de plano?')">
+                <i class="bi bi-check-lg me-1"></i>Aplicar
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Cards dos planos -->
+        <div class="row g-3 mt-2">
+          {% for plano in planos %}
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 h-100" style="background:#f8fafc;border:1px solid {% if assinatura_ativa and assinatura_ativa.plano.pk == plano.pk %}{{ plano.cor }}{% else %}#e2e8f0{% endif %};border-width:{% if assinatura_ativa and assinatura_ativa.plano.pk == plano.pk %}2px{% else %}1px{% endif %};">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi {{ plano.icone }}" style="color:{{ plano.cor }};"></i>
+                <span class="fw-bold small">{{ plano.nome }}</span>
+                {% if assinatura_ativa and assinatura_ativa.plano.pk == plano.pk %}
+                <span class="badge ms-auto" style="background:{{ plano.cor }};font-size:.6rem;">Atual</span>
+                {% endif %}
+              </div>
+              <div style="font-size:.75rem;color:#64748b;">
+                <div>{{ plano.label_clientes }} clientes</div>
+                <div>{{ plano.label_produtos }} produtos</div>
+                {% if plano.tem_whatsapp %}<div class="text-success"><i class="bi bi-whatsapp me-1"></i>WhatsApp</div>{% endif %}
+                <div class="fw-semibold mt-1" style="color:#1e293b;">R$ {{ plano.preco_mensal }}/mês</div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Usuários da empresa -->
+    <div class="adm-card mb-4">
+      <div class="adm-card-header">
+        <span><i class="bi bi-people me-2"></i>Usuários ({{ usuarios|length }})</span>
+        <button class="btn btn-sm btn-indigo" data-bs-toggle="collapse" data-bs-target="#addUsuarioForm">
+          <i class="bi bi-plus-lg me-1"></i>Adicionar
+        </button>
+      </div>
+
+      <!-- Form adicionar usuário (colapsável) -->
+      <div class="collapse p-4 border-bottom" id="addUsuarioForm">
+        <form method="post" action="{% url 'admin_adicionar_usuario' empresa.pk %}">
+          {% csrf_token %}
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label">Nome *</label>
+              {{ form_add_usuario.nome_contato }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">E-mail *</label>
+              {{ form_add_usuario.email_usuario }}
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Perfil</label>
+              {{ form_add_usuario.role }}
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-indigo w-100">Criar</button>
+            </div>
+          </div>
+          <div class="small text-muted mt-2">
+            <i class="bi bi-info-circle me-1"></i>
+            Senha gerada automaticamente — será exibida aqui após criar.
+          </div>
+        </form>
+      </div>
+
+      {% if usuarios %}
+      <div class="table-responsive">
+        <table class="table adm-table">
+          <thead><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Status</th><th class="text-end">Ações</th></tr></thead>
+          <tbody>
+          {% for perfil in usuarios %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.75rem;flex-shrink:0;">
+                  {{ perfil.user.username|first|upper }}
+                </div>
+                <div>
+                  <div class="fw-semibold small">{{ perfil.user.get_full_name|default:perfil.user.username }}</div>
+                  <div class="text-muted" style="font-size:.72rem;">@{{ perfil.user.username }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="small text-muted">{{ perfil.user.email|default:"—" }}</td>
+            <td><span class="sb {% if perfil.role == 'admin' %}sb-ativa{% elif perfil.role == 'operador' %}sb-trial{% else %}sb-expirada{% endif %}" style="font-size:.68rem;">{{ perfil.get_role_display }}</span></td>
+            <td><span class="sb {% if perfil.ativo %}sb-ativa{% else %}sb-cancelada{% endif %}" style="font-size:.68rem;">{% if perfil.ativo %}Ativo{% else %}Inativo{% endif %}</span></td>
+            <td class="text-end">
+              <form method="post" action="{% url 'admin_toggle_usuario' perfil.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-xs btn-outline-{% if perfil.ativo %}warning{% else %}success{% endif %} btn-sm"
+                        style="font-size:.72rem;padding:2px 8px;"
+                        onclick="return confirm('{% if perfil.ativo %}Desativar{% else %}Ativar{% endif %} usuário?')">
+                  {% if perfil.ativo %}Desativar{% else %}Ativar{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="adm-empty"><i class="bi bi-person-x"></i><p>Nenhum usuário vinculado a esta empresa.</p></div>
+      {% endif %}
+    </div>
+
+    <!-- Histórico de assinaturas -->
+    <div class="adm-card">
+      <div class="adm-card-header"><i class="bi bi-clock-history me-2"></i>Histórico de Assinaturas</div>
+      {% if historico_assinaturas %}
+      <div class="table-responsive">
+        <table class="table adm-table">
+          <thead><tr><th>Plano</th><th>Ciclo</th><th>Início</th><th>Fim</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+          {% for sub in historico_assinaturas %}
+          <tr>
+            <td class="fw-semibold small" style="color:{{ sub.plano.cor }}">
+              <i class="bi {{ sub.plano.icone }} me-1"></i>{{ sub.plano.nome }}
+            </td>
+            <td class="small">{{ sub.get_ciclo_display }}</td>
+            <td class="small">{{ sub.data_inicio|date:"d/m/Y" }}</td>
+            <td class="small">{{ sub.data_fim|date:"d/m/Y"|default:"—" }}</td>
+            <td class="small">{% if sub.valor_cobrado %}R$ {{ sub.valor_cobrado }}{% else %}—{% endif %}</td>
+            <td><span class="sb sb-{{ sub.status }}" style="font-size:.68rem;">{{ sub.get_status_display }}</span></td>
+            <td>
+              {% if sub.status in 'expirada,cancelada' %}
+              <form method="post" action="{% url 'admin_renovar_assinatura' sub.pk %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="ciclo" value="{{ sub.ciclo }}" />
+                <button type="submit" class="btn btn-xs btn-outline-success btn-sm" style="font-size:.72rem;padding:2px 8px;"
+                        onclick="return confirm('Reativar?')">Reativar</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="adm-empty"><i class="bi bi-clock-history"></i><p>Nenhum histórico.</p></div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

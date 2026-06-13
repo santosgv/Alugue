@@ -1,0 +1,154 @@
+{% extends 'core/admin/base_admin.html' %}
+{% block title %}Empresas{% endblock %}
+{% block page_title %}Empresas{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+  <div>
+    <h1>Empresas</h1>
+    <p>{{ page_obj.paginator.count }} empresa(s) encontrada(s)</p>
+  </div>
+  <a href="{% url 'admin_empresa_criar' %}" class="btn btn-indigo">
+    <i class="bi bi-plus-lg me-2"></i>Nova Empresa
+  </a>
+</div>
+
+<!-- Filtros -->
+<div class="adm-form-card mb-4 p-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-6">
+      <div class="input-group">
+        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" name="q" value="{{ q }}" class="form-control border-start-0 ps-0"
+               placeholder="Buscar por nome, CNPJ ou e-mail..." />
+      </div>
+    </div>
+    <div class="col-md-3">
+      <select name="status" class="form-select">
+        <option value="">Todos os status</option>
+        <option value="ativa"          {% if status == 'ativa'          %}selected{% endif %}>Ativas</option>
+        <option value="trial"          {% if status == 'trial'          %}selected{% endif %}>Em Trial</option>
+        <option value="sem_assinatura" {% if status == 'sem_assinatura' %}selected{% endif %}>Sem Assinatura</option>
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button type="submit" class="btn btn-indigo flex-grow-1">Filtrar</button>
+      {% if q or status %}<a href="{% url 'admin_empresas' %}" class="btn btn-outline-secondary">Limpar</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="adm-card">
+  {% if empresas %}
+  <div class="table-responsive">
+    <table class="table adm-table">
+      <thead>
+        <tr>
+          <th>Empresa</th>
+          <th>Contato</th>
+          <th>Plano / Assinatura</th>
+          <th>Cadastro</th>
+          <th class="text-center">Status</th>
+          <th class="text-end">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for empresa in empresas %}
+        {% with sub=empresa.assinaturas.all|dictsortreversed:"criado_em" %}
+        {% with assinatura=sub.0 %}
+        <tr>
+          <td>
+            <a href="{% url 'admin_empresa_detalhe' empresa.pk %}"
+               class="fw-semibold text-decoration-none text-dark">
+              {{ empresa.nome }}
+            </a>
+            {% if empresa.cnpj %}<div class="text-muted small font-monospace">{{ empresa.cnpj }}</div>{% endif %}
+          </td>
+          <td>
+            <div class="small">{{ empresa.email|default:"—" }}</div>
+            <div class="text-muted small">{{ empresa.telefone|default:"" }}</div>
+          </td>
+          <td>
+            {% if assinatura %}
+              <div class="fw-semibold small">{{ assinatura.plano.nome }}</div>
+              <div class="text-muted small">
+                {{ assinatura.get_ciclo_display }}
+                {% if assinatura.data_fim %}· até {{ assinatura.data_fim|date:"d/m/Y" }}{% endif %}
+              </div>
+            {% else %}
+              <span class="text-muted small">Sem assinatura</span>
+            {% endif %}
+          </td>
+          <td class="small text-muted">{{ empresa.data_cadastro|date:"d/m/Y" }}</td>
+          <td class="text-center">
+            {% if assinatura %}
+              <span class="sb sb-{{ assinatura.status }}">{{ assinatura.get_status_display }}</span>
+            {% else %}
+              <span class="sb" style="background:#f1f5f9;color:#94a3b8;">Sem plano</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'admin_empresa_detalhe' empresa.pk %}"
+                 class="btn btn-outline-secondary" title="Detalhe">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{% url 'admin_empresa_editar' empresa.pk %}"
+                 class="btn btn-outline-primary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endwith %}
+        {% endwith %}
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginação -->
+  {% if page_obj.has_other_pages %}
+  <div class="d-flex justify-content-between align-items-center p-3 border-top">
+    <span class="text-muted small">
+      {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+    </span>
+    <nav>
+      <ul class="pagination pagination-sm mb-0 gap-1">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}page={{ page_obj.previous_page_number }}" style="border-radius:8px;">‹</a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+          <li class="page-item active">
+            <span class="page-link" style="border-radius:8px;background:#6366f1;border-color:#6366f1;">{{ num }}</span>
+          </li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}page={{ num }}" style="border-radius:8px;">{{ num }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}page={{ page_obj.next_page_number }}" style="border-radius:8px;">›</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="adm-empty">
+    <i class="bi bi-buildings"></i>
+    <p>Nenhuma empresa encontrada.{% if q or status %} Tente outros filtros.{% endif %}</p>
+    <a href="{% url 'admin_empresa_criar' %}" class="btn btn-indigo btn-sm mt-2">
+      <i class="bi bi-plus-lg me-1"></i>Cadastrar primeira empresa
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

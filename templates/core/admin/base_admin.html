@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Plataforma{% endblock %} — alugeSe Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  {% block extra_css %}{% endblock %}
+  <style>
+    :root {
+      --adm-sidebar: 240px;
+      --adm-topbar: 58px;
+      --adm-bg: #030712;
+      --adm-surface: #0f172a;
+      --adm-border: #1e293b;
+      --adm-text: #94a3b8;
+      --adm-text-active: #f1f5f9;
+      --adm-accent: #6366f1;
+      --adm-accent-hover: #4f46e5;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    #adm-sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: var(--adm-sidebar);
+      background: var(--adm-bg);
+      z-index: 1040;
+      display: flex; flex-direction: column;
+      border-right: 1px solid var(--adm-border);
+      overflow-y: auto;
+    }
+    .adm-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 20px; border-bottom: 1px solid var(--adm-border);
+      text-decoration: none;
+    }
+    .adm-brand-icon {
+      width: 34px; height: 34px;
+      background: var(--adm-accent);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 15px; flex-shrink: 0;
+    }
+    .adm-brand-name { color: #f8fafc; font-weight: 700; font-size: 1rem; }
+    .adm-brand-tag  { color: var(--adm-text); font-size: .62rem; text-transform: uppercase; letter-spacing: 1px; }
+
+    .adm-section { padding: 16px 0 2px; }
+    .adm-section-label {
+      padding: 0 20px 5px;
+      font-size: .62rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1.2px;
+      color: #334155;
+    }
+    .adm-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 20px;
+      color: var(--adm-text); text-decoration: none;
+      font-size: .82rem; font-weight: 500;
+      position: relative; transition: background .15s, color .15s;
+    }
+    .adm-link i { font-size: .95rem; width: 16px; text-align: center; flex-shrink: 0; }
+    .adm-link:hover { background: var(--adm-surface); color: var(--adm-text-active); }
+    .adm-link.active {
+      background: rgba(99,102,241,.15); color: var(--adm-accent);
+    }
+    .adm-link.active::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--adm-accent); border-radius: 0 3px 3px 0;
+    }
+    .adm-badge {
+      margin-left: auto; background: #ef4444; color: #fff;
+      font-size: .62rem; font-weight: 700;
+      padding: 1px 7px; border-radius: 20px; min-width: 20px; text-align: center;
+    }
+    .adm-footer {
+      margin-top: auto; padding: 14px 20px;
+      border-top: 1px solid var(--adm-border);
+    }
+    .adm-back-link {
+      display: flex; align-items: center; gap: 8px;
+      color: var(--adm-text); text-decoration: none;
+      font-size: .8rem; font-weight: 500;
+    }
+    .adm-back-link:hover { color: var(--adm-text-active); }
+
+    /* ── TOPBAR ── */
+    #adm-topbar {
+      position: fixed; top: 0; right: 0;
+      left: var(--adm-sidebar);
+      height: var(--adm-topbar);
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      z-index: 1030;
+      display: flex; align-items: center;
+      padding: 0 24px; gap: 12px;
+    }
+    .adm-topbar-title { font-size: .95rem; font-weight: 600; color: #1e293b; }
+    .adm-topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .adm-user-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: #f8fafc; border-radius: 20px;
+      padding: 4px 12px 4px 4px;
+      font-size: .8rem; font-weight: 600; color: #475569;
+    }
+    .adm-user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--adm-accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700;
+    }
+    .adm-env-badge {
+      background: #fef9c3; color: #92400e;
+      border: 1px solid #fde68a;
+      font-size: .68rem; font-weight: 700;
+      padding: 2px 10px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+
+    /* ── MAIN ── */
+    #adm-main {
+      margin-left: var(--adm-sidebar);
+      padding-top: var(--adm-topbar);
+      min-height: 100vh;
+    }
+    .adm-content { padding: 28px; }
+
+    /* ── PAGE HEADER ── */
+    .adm-page-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+    }
+    .adm-page-header h1 { font-size: 1.35rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .adm-page-header p  { font-size: .82rem; color: #64748b; margin: 3px 0 0; }
+
+    /* ── STAT CARDS ── */
+    .adm-stat {
+      background: #fff; border-radius: 14px; padding: 20px 22px;
+      border: 1px solid #e2e8f0;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .adm-stat:hover { box-shadow: 0 8px 24px rgba(0,0,0,.07); transform: translateY(-2px); }
+    .adm-stat-icon {
+      width: 44px; height: 44px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; margin-bottom: 12px;
+    }
+    .adm-stat-value { font-size: 1.9rem; font-weight: 800; color: #1e293b; line-height: 1; }
+    .adm-stat-label { font-size: .8rem; color: #64748b; margin-top: 3px; font-weight: 500; }
+
+    .adm-indigo  .adm-stat-icon { background: #eef2ff; color: #6366f1; }
+    .adm-green   .adm-stat-icon { background: #f0fdf4; color: #22c55e; }
+    .adm-amber   .adm-stat-icon { background: #fffbeb; color: #f59e0b; }
+    .adm-red     .adm-stat-icon { background: #fef2f2; color: #ef4444; }
+    .adm-blue    .adm-stat-icon { background: #eff6ff; color: #3b82f6; }
+    .adm-emerald .adm-stat-icon { background: #ecfdf5; color: #10b981; }
+
+    /* ── TABLES ── */
+    .adm-card {
+      background: #fff; border-radius: 14px;
+      border: 1px solid #e2e8f0; overflow: hidden;
+    }
+    .adm-card-header {
+      background: #fff; border-bottom: 1px solid #e2e8f0;
+      padding: 14px 20px; font-weight: 600; font-size: .9rem; color: #1e293b;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .adm-table { margin: 0; }
+    .adm-table thead th {
+      background: #f8fafc; color: #64748b;
+      font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .6px;
+      border-bottom: 1px solid #e2e8f0; padding: 11px 16px;
+    }
+    .adm-table td { padding: 12px 16px; vertical-align: middle; border-color: #f1f5f9; }
+    .adm-table tbody tr:hover { background: #f8fafc; }
+
+    /* ── STATUS BADGES ── */
+    .sb {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: .7rem; font-weight: 600;
+    }
+    .sb::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .sb-ativa      { background: #dcfce7; color: #16a34a; }
+    .sb-trial      { background: #fef9c3; color: #ca8a04; }
+    .sb-expirada   { background: #f1f5f9; color: #64748b; }
+    .sb-cancelada  { background: #fef2f2; color: #dc2626; }
+    .sb-suspensa   { background: #fff7ed; color: #c2410c; }
+
+    /* ── FORM CARD ── */
+    .adm-form-card { background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; padding: 26px; }
+    .adm-section-title {
+      font-size: .7rem; font-weight: 600; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;
+    }
+
+    /* ── MISC ── */
+    .adm-empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
+    .adm-empty i { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+    .form-label { font-weight: 500; font-size: .83rem; color: #374151; margin-bottom: 5px; }
+    .form-control, .form-select {
+      border: 1px solid #d1d5db; border-radius: 8px;
+      font-size: .88rem; padding: 9px 12px;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+    }
+    .btn { border-radius: 8px; font-weight: 500; font-size: .875rem; }
+    .btn-indigo { background: #6366f1; border-color: #6366f1; color: #fff; }
+    .btn-indigo:hover { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .alert { border-radius: 10px; border: none; font-size: .875rem; }
+
+    .progress-sm { height: 6px; border-radius: 3px; }
+    .mrr-value { font-size: 2.2rem; font-weight: 800; color: #1e293b; }
+
+    @media (max-width: 991px) {
+      #adm-sidebar { display: none; }
+      #adm-topbar  { left: 0; }
+      #adm-main    { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+<nav id="adm-sidebar">
+  <a href="{% url 'admin_plataforma' %}" class="adm-brand">
+    <div class="adm-brand-icon"><i class="bi bi-building-gear"></i></div>
+    <div>
+      <div class="adm-brand-name">alugeSe</div>
+      <div class="adm-brand-tag">Plataforma Admin</div>
+    </div>
+  </a>
+
+  <div class="adm-section">
+    <div class="adm-section-label">Visão Geral</div>
+    <a href="{% url 'admin_plataforma' %}" class="adm-link {% if request.resolver_match.url_name == 'admin_plataforma' %}active{% endif %}">
+      <i class="bi bi-grid-1x2-fill"></i> Dashboard
+    </a>
+  </div>
+
+  <div class="adm-section">
+    <div class="adm-section-label">Clientes SaaS</div>
+    <a href="{% url 'admin_empresas' %}" class="adm-link {% if 'admin_empresa' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-buildings-fill"></i> Empresas
+    </a>
+  </div>
+
+  <div class="adm-section">
+    <div class="adm-section-label">Produto</div>
+    <a href="{% url 'planos' %}" class="adm-link">
+      <i class="bi bi-credit-card-fill"></i> Página de Planos
+    </a>
+    <a href="/admin/core/subscriptionplan/" class="adm-link">
+      <i class="bi bi-sliders"></i> Editar Planos
+    </a>
+  </div>
+
+  <div class="adm-footer">
+    <a href="{% url 'dashboard' %}" class="adm-back-link">
+      <i class="bi bi-arrow-left-circle"></i> Voltar ao Sistema
+    </a>
+  </div>
+</nav>
+
+<!-- ══ TOPBAR ════════════════════════════════════════════════ -->
+<header id="adm-topbar">
+  <span class="adm-topbar-title">{% block page_title %}Plataforma{% endblock %}</span>
+  <div class="adm-topbar-right">
+    <span class="adm-env-badge">SuperAdmin</span>
+    <div class="adm-user-chip">
+      <div class="adm-user-avatar">{{ request.user.username|first|upper }}</div>
+      {{ request.user.username }}
+    </div>
+  </div>
+</header>
+
+<!-- ══ MAIN ══════════════════════════════════════════════════ -->
+<main id="adm-main">
+  <div class="adm-content">
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

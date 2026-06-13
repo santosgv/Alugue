@@ -1,0 +1,176 @@
+{% extends 'core/admin/base_admin.html' %}
+{% block title %}Dashboard da Plataforma{% endblock %}
+{% block page_title %}Dashboard da Plataforma{% endblock %}
+
+{% block content %}
+
+<!-- ── KPIs principais ─────────────────────────────────────── -->
+<div class="row g-4 mb-4">
+  <div class="col-6 col-xl-2">
+    <div class="adm-stat adm-indigo">
+      <div class="adm-stat-icon"><i class="bi bi-buildings-fill"></i></div>
+      <div class="adm-stat-value">{{ total_empresas }}</div>
+      <div class="adm-stat-label">Empresas Ativas</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-2">
+    <div class="adm-stat adm-green">
+      <div class="adm-stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+      <div class="adm-stat-value">{{ total_ativas }}</div>
+      <div class="adm-stat-label">Assinaturas Ativas</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-2">
+    <div class="adm-stat adm-amber">
+      <div class="adm-stat-icon"><i class="bi bi-hourglass-split"></i></div>
+      <div class="adm-stat-value">{{ total_trials }}</div>
+      <div class="adm-stat-label">Em Trial</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-2">
+    <div class="adm-stat adm-red">
+      <div class="adm-stat-icon"><i class="bi bi-x-circle-fill"></i></div>
+      <div class="adm-stat-value">{{ total_canceladas }}</div>
+      <div class="adm-stat-label">Canceladas</div>
+    </div>
+  </div>
+  <div class="col-12 col-xl-4">
+    <div class="adm-stat adm-emerald">
+      <div class="adm-stat-icon"><i class="bi bi-currency-dollar"></i></div>
+      <div class="mrr-value">R$ {{ mrr|floatformat:2 }}</div>
+      <div class="adm-stat-label">MRR estimado (assinaturas ativas)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Distribuição por plano + Trials expirando ──────────── -->
+<div class="row g-4 mb-4">
+
+  <!-- Distribuição por plano -->
+  <div class="col-lg-4">
+    <div class="adm-card h-100">
+      <div class="adm-card-header"><i class="bi bi-pie-chart-fill me-2 text-indigo-500" style="color:#6366f1;"></i>Distribuição por Plano</div>
+      <div class="p-4">
+        {% for plano in por_plano %}
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="d-flex align-items-center gap-2">
+              <span style="width:10px;height:10px;border-radius:50%;background:{{ plano.cor }};display:inline-block;"></span>
+              <span class="fw-semibold small">{{ plano.nome }}</span>
+            </div>
+            <span class="fw-bold">{{ plano.qtd_ativas }}</span>
+          </div>
+          {% if total_ativas > 0 %}
+          {% with pct=plano.qtd_ativas|floatformat:0 %}
+          <div class="progress progress-sm">
+            <div class="progress-bar"
+                 style="width:{% widthratio plano.qtd_ativas total_ativas 100 %}%;background:{{ plano.cor }};">
+            </div>
+          </div>
+          {% endwith %}
+          {% endif %}
+          <div class="d-flex justify-content-between mt-1" style="font-size:.72rem;color:#94a3b8;">
+            <span>R$ {{ plano.preco_mensal }}/mês</span>
+            {% if total_ativas > 0 %}
+            <span>{% widthratio plano.qtd_ativas total_ativas 100 %}% das ativas</span>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <div class="adm-empty"><i class="bi bi-bar-chart"></i><p>Nenhum plano ativo.</p></div>
+        {% endfor %}
+
+        <div class="pt-3 border-top mt-2">
+          <a href="{% url 'admin_empresa_criar' %}" class="btn btn-indigo w-100 btn-sm">
+            <i class="bi bi-plus-lg me-2"></i>Nova Empresa
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trials expirando -->
+  <div class="col-lg-8">
+    <div class="adm-card h-100">
+      <div class="adm-card-header">
+        <span><i class="bi bi-clock-fill me-2 text-warning"></i>Trials Expirando em 7 dias</span>
+        {% if trials_expirando %}<span class="badge bg-warning text-dark">{{ trials_expirando|length }}</span>{% endif %}
+      </div>
+      {% if trials_expirando %}
+      <div class="table-responsive">
+        <table class="table adm-table">
+          <thead><tr><th>Empresa</th><th>Plano</th><th>Expira em</th><th>Dias Restantes</th><th class="text-end">Ação</th></tr></thead>
+          <tbody>
+          {% for sub in trials_expirando %}
+          <tr>
+            <td>
+              <a href="{% url 'admin_empresa_detalhe' sub.empresa.pk %}" class="fw-semibold text-decoration-none text-dark">
+                {{ sub.empresa.nome }}
+              </a>
+              {% if sub.empresa.email %}<div class="text-muted small">{{ sub.empresa.email }}</div>{% endif %}
+            </td>
+            <td><span class="sb sb-trial">{{ sub.plano.nome }}</span></td>
+            <td class="fw-semibold {% if sub.dias_restantes <= 2 %}text-danger{% elif sub.dias_restantes <= 4 %}text-warning{% endif %}">
+              {{ sub.data_fim|date:"d/m/Y" }}
+            </td>
+            <td>
+              {% if sub.dias_restantes == 0 %}
+                <span class="badge bg-danger">Expira hoje</span>
+              {% elif sub.dias_restantes == 1 %}
+                <span class="badge bg-danger">1 dia</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">{{ sub.dias_restantes }} dias</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'admin_empresa_detalhe' sub.empresa.pk %}" class="btn btn-sm btn-indigo">
+                Converter
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="adm-empty"><i class="bi bi-calendar-check"></i><p>Nenhum trial expirando em breve.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Assinaturas expiradas ──────────────────────────────── -->
+{% if expiradas %}
+<div class="adm-card">
+  <div class="adm-card-header">
+    <span><i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>Assinaturas Expiradas Recentemente</span>
+    <a href="{% url 'admin_empresas' %}?status=sem_assinatura" class="btn btn-sm btn-outline-danger">Ver todas</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table adm-table">
+      <thead><tr><th>Empresa</th><th>Plano</th><th>Expirou em</th><th class="text-end">Ação</th></tr></thead>
+      <tbody>
+      {% for sub in expiradas %}
+      <tr>
+        <td>
+          <a href="{% url 'admin_empresa_detalhe' sub.empresa.pk %}" class="fw-semibold text-decoration-none text-dark">{{ sub.empresa.nome }}</a>
+        </td>
+        <td>{{ sub.plano.nome }}</td>
+        <td class="text-danger fw-semibold">{{ sub.data_fim|date:"d/m/Y" }}</td>
+        <td class="text-end">
+          <form method="post" action="{% url 'admin_renovar_assinatura' sub.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="ciclo" value="{{ sub.ciclo }}" />
+            <button type="submit" class="btn btn-sm btn-outline-success">Renovar</button>
+          </form>
+          <a href="{% url 'admin_empresa_detalhe' sub.empresa.pk %}" class="btn btn-sm btn-outline-secondary ms-1">Ver</a>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

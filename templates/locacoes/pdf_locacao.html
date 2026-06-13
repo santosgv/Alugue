@@ -1,0 +1,235 @@
+{% load filters %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    color:#333;
+    font-size:12px;
+}
+
+.header{
+    background:#0d6efd;
+    color:white;
+    padding:15px;
+    text-align:center;
+}
+
+.section{
+    margin-top:20px;
+}
+
+.section-title{
+    font-size:14px;
+    font-weight:bold;
+    color:#0d6efd;
+    border-bottom:2px solid #0d6efd;
+    padding-bottom:5px;
+    margin-bottom:10px;
+}
+
+.info-box{
+    border:1px solid #ddd;
+    background:#f8f9fa;
+    padding:12px;
+}
+
+.itens{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.itens th{
+    background:#0d6efd;
+    color:white;
+    padding:8px;
+}
+
+.itens td{
+    padding:8px;
+    border-bottom:1px solid #ddd;
+}
+
+.total-box{
+    margin-top:15px;
+    text-align:right;
+}
+
+.total-label{
+    font-size:12px;
+    color:#666;
+}
+
+.total-value{
+    font-size:24px;
+    color:#198754;
+    font-weight:bold;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <h1>COMPROVANTE DE LOCAÇÃO</h1>
+
+    <div class="numero">
+        Locação Nº {{ locacao.pk }}
+    </div>
+
+</div>
+
+<div class="section">
+
+    <div class="section-title">
+        CLIENTE
+    </div>
+
+    <p>
+        <strong>Nome:</strong>
+        {{ locacao.cliente.nome }}
+    </p>
+
+    <p>
+        <strong>CPF/CNPJ:</strong>
+        {{ locacao.cliente.cpf_cnpj|cpf_cnpj }}
+    </p>
+
+    <p>
+        <strong>Telefone:</strong>
+        {{ locacao.cliente.telefone|telefone }}
+    </p>
+
+</div>
+
+<div class="section">
+
+    <div class="section-title">
+        DADOS DA LOCAÇÃO
+    </div>
+
+    <div class="info-box">
+
+        <table width="100%">
+
+            <tr>
+                <td>
+                    <strong>Status:</strong>
+                    {{ locacao.get_status_display }}
+                </td>
+
+                <td>
+                    <strong>Duração:</strong>
+                    {{ locacao.dias_locacao }} dias
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <strong>Início:</strong>
+                    {{ locacao.data_inicio|date:"d/m/Y" }}
+                </td>
+
+                <td>
+                    <strong>Devolução:</strong>
+                    {{ locacao.data_fim_prevista|date:"d/m/Y" }}
+                </td>
+            </tr>
+
+        </table>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <div class="titulo">
+        Itens Locados
+    </div>
+
+    <table class="itens">
+
+        <thead>
+            <tr>
+                <th>Produto</th>
+                <th>Qtd</th>
+                <th>Valor Dia</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+        {% for item in locacao.itens.all %}
+
+            <tr>
+                <td>{{ item.produto.nome }}</td>
+                <td>{{ item.quantidade }}</td>
+                <td>R$ {{ item.valor_unitario|money }}</td>
+                <td>R$ {{ item.valor_total|money }}</td>
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% if locacao.observacoes %}
+<div class="card">
+
+   <div style="border:1px solid #ddd;padding:10px;">
+    {{ locacao.observacoes }}
+</div>
+
+
+</div>
+{% endif %}
+
+<div class="info-box" style="margin-top:20px;">
+
+    Declaro que recebi os equipamentos em perfeito estado
+    e comprometo-me a devolvê-los na data acordada.
+
+</div>
+
+<table width="100%" style="margin-top:80px;">
+    <tr>
+        <td align="center">
+
+            ___________________________
+
+            <br>
+
+            Cliente
+
+        </td>
+
+        <td align="center">
+
+            ___________________________
+
+            <br>
+
+            Responsável
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

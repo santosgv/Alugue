@@ -1,0 +1,131 @@
+{% extends 'base.html' %}{% load filters %}
+
+{% block title %}Categorias{% endblock %}
+{% block page_title %}Categorias{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Categorias</h1>
+        <p class="page-header-sub">
+            {{ page_obj.paginator.count }} categoria(s) cadastrada(s)
+        </p>
+    </div>
+    {% if user_perfil|can_edit %}
+    <a href="{% url 'produtos:novo-categoria' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>
+        Nova Categoria
+    </a>
+    {%endif%}
+</div>
+
+<div class="table-card">
+
+    <div class="p-3 border-bottom">
+        <form method="get" class="row g-2 align-items-end">
+
+            <div class="col-md-10">
+                <div class="search-bar">
+                    <i class="bi bi-search"></i>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ q }}"
+                        class="form-control"
+                        placeholder="Buscar categoria..."
+                    >
+                </div>
+            </div>
+
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-secondary flex-grow-1">
+                    Filtrar
+                </button>
+
+                {% if q %}
+                <a href="{% url 'produtos:lista-categorias' %}" class="btn btn-outline-danger">
+                    ✕
+                </a>
+                {% endif %}
+            </div>
+
+        </form>
+    </div>
+
+    {% if categorias %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Descrição</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for categoria in categorias %}
+                <tr>
+
+                    <td>
+                        <a href="{% url 'produtos:detalhe-categoria' categoria.pk %}"
+                           class="fw-semibold text-decoration-none text-dark">
+                            {{ categoria.nome }}
+                        </a>
+                    </td>
+
+                    <td>
+                        {% if categoria.descricao %}
+                            <span class="text-muted">
+                                {{ categoria.descricao|truncatechars:100 }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">Sem descrição</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+
+                            <a href="{% url 'produtos:detalhe-categoria' categoria.pk %}"
+                               class="btn btn-outline-secondary"
+                               title="Visualizar">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if user_perfil|can_edit %}
+                            <a href="{% url 'produtos:editar-categoria' categoria.pk %}"
+                               class="btn btn-outline-primary"
+                               title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+
+                            <a href="{% url 'produtos:excluir-categoria' categoria.pk %}"
+                               class="btn btn-outline-danger"
+                               title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        {%endif%}
+                        </div>
+                    </td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include 'partials/paginacao.html' %}
+
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-tags"></i>
+        <p>Nenhuma categoria encontrada.</p>
+
+        <a href="{% url 'produtos:novo-categoria' %}" class="btn btn-primary mt-3">
+            Cadastrar primeira categoria
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

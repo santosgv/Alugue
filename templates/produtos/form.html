@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header-title">{{ titulo }}</h1>
+  <a href="{% url 'produtos:lista' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Voltar</a>
+</div>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="form-card mb-4">
+        <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">Informações do Produto</h6>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label">Nome *</label>{{ form.nome }}
+            {% if form.nome.errors %}<div class="text-danger small mt-1">{{ form.nome.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Código Interno *</label>{{ form.codigo_interno }}
+            {% if form.codigo_interno.errors %}<div class="text-danger small mt-1">{{ form.codigo_interno.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Categoria</label>{{ form.categoria }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Valor Diário (R$) *</label>{{ form.valor_diario }}
+            {% if form.valor_diario.errors %}<div class="text-danger small mt-1">{{ form.valor_diario.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Quantidade Total *</label>{{ form.quantidade_total }}
+            {% if form.quantidade_total.errors %}<div class="text-danger small mt-1">{{ form.quantidade_total.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Quantidade Disponível *</label>{{ form.quantidade_disponivel }}
+            {% if form.quantidade_disponivel.errors %}<div class="text-danger small mt-1">{{ form.quantidade_disponivel.errors }}</div>{% endif %}
+          </div>
+          <div class="col-12">
+            <label class="form-label">Descrição</label>{{ form.descricao }}
+          </div>
+        </div>
+      </div>
+      <div class="form-card">
+        <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">Foto do Produto</h6>
+        {{ form.foto }}
+        {% if form.instance.foto %}
+        <div class="mt-3">
+          <img src="{{ form.instance.foto.url }}" style="max-height:120px;border-radius:10px;" alt="Foto atual" />
+          <p class="text-muted small mt-1">Foto atual. Selecione outra para substituir.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="form-card">
+        <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">Status</h6>
+        <label class="form-label">Status do Produto *</label>{{ form.status }}
+        {% if form.status.errors %}<div class="text-danger small mt-1">{{ form.status.errors }}</div>{% endif %}
+        {% if form.non_field_errors %}<div class="alert alert-danger mt-3">{{ form.non_field_errors }}</div>{% endif %}
+        <hr/>
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check-lg me-2"></i>{{ botao }}</button>
+        <a href="{% url 'produtos:lista' %}" class="btn btn-outline-secondary w-100 mt-2">Cancelar</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% block extra_js %}
+<script>
+  // ── Valor Diário: máscara de moeda R$ ──
+$('#id_valor_diario').mask('000.000.000.000.000,00', {
+    reverse: true,  // preenche da direita para a esquerda, como calculadora
+    placeholder: '0,00'
+});
+
+// Validação visual no blur
+$('#id_valor_diario').on('blur', function () {
+    var raw = $(this).val().replace(/\./g, '').replace(',', '.');
+    var valor = parseFloat(raw);
+
+    if (isNaN(valor) || valor <= 0) {
+        $(this)
+            .addClass('is-invalid')
+            .removeClass('is-valid');
+        if ($(this).siblings('.valor-feedback').length === 0) {
+            $(this).after(
+                '<div class="valor-feedback invalid-feedback" style="display:block">' +
+                'Informe um valor maior que zero.' +
+                '</div>'
+            );
+        }
+    } else {
+        $(this)
+            .removeClass('is-invalid')
+            .addClass('is-valid');
+        $(this).siblings('.valor-feedback').remove();
+    }
+});
+
+// Limpa feedback ao focar novamente
+$('#id_valor_diario').on('focus', function () {
+    $(this)
+        .removeClass('is-valid is-invalid')
+        .siblings('.valor-feedback')
+        .remove();
+});
+</script>
+
+{% endblock %}
+{% endblock %}

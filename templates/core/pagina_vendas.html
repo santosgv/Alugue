@@ -1,0 +1,1002 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>alugeSe — Sistema de Gestão de Locações</title>
+<meta property="og:title" content="AlugaSe" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="." />
+<meta property="og:url" content="." />
+<meta property="og:site_name" content="AlugeSe" />
+<meta property="og:description" content="Feito para quem loca de verdade" />
+<meta name="Title"content="AlugeSe" />
+<meta name="Author" content="Vitor Gomes" />
+<meta name="description" content="Desenvolvedor FullStack.">
+<meta name="KeyWords" content="locações,planilha,eventos ,tenda, cadeira, som, gerador, mesas ou qualquer equipamento." />
+<meta name="generator" content="Microsoft FrontPage 5.0" />
+<meta name="Language" CONTENT="Portuguese" />
+<meta name="Rating" CONTENT="Safe For Kids" />
+<meta name="Doc-class" CONTENT="Completed" />
+<link rel="icon" href="{% static 'box-seam-fill.svg' %}" type="image/svg+xml" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+
+/* ── Reset & Base ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+:root {
+  --primary:      #38BDF8;
+  --primary-dark: #0284C7;
+  --primary-deep: #0EA5E9;
+  --dark:         #0f172a;
+}
+
+/* ── Gradiente de fundo ───────────────────────── */
+.bg-gradient-custom {
+  background:
+    radial-gradient(circle at top left,  #7dd3fc, transparent 35%),
+    radial-gradient(circle at bottom right, #38bdf8, transparent 40%),
+    #f8fafc;
+}
+
+/* ── Glassmorphism ────────────────────────────── */
+.glass {
+  backdrop-filter: blur(18px);
+  background: rgba(255,255,255,.55);
+  border: 1px solid rgba(255,255,255,.3);
+}
+
+/* ── Navbar ───────────────────────────────────── */
+.navbar { background: transparent; }
+.nav-link { font-weight: 500; color: #1e293b !important; }
+.nav-link:hover { color: var(--primary-deep) !important; }
+
+.btn-nav {
+  background: var(--primary-deep);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 10px 28px;
+  font-weight: 600;
+  transition: background .2s;
+}
+.btn-nav:hover { background: var(--primary-dark); color: #fff; }
+
+/* ── Hero ─────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-title {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1.08;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.hero-title .highlight { color: var(--primary-deep); }
+
+/* Floating cards do hero */
+.floating { animation: float 5s ease-in-out infinite; }
+.floating-2 { animation: float 6s ease-in-out infinite .8s; }
+.floating-3 { animation: float 4.5s ease-in-out infinite 1.5s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-18px); }
+}
+
+.hero-card {
+  position: absolute;
+  border-radius: 18px;
+  padding: 16px 20px;
+  font-size: .85rem;
+  font-weight: 600;
+  min-width: 160px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.12);
+  line-height: 1.5;
+}
+.hero-card .tag {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.hero-card .val { font-size: 1.1rem; color: var(--primary-deep); font-weight: 800; }
+
+.card-1 { top: 18%; right: 8%; }
+.card-2 { bottom: 22%; right: 18%; }
+.card-3 { top: 52%; right: 2%; }
+
+/* ── Botões principais ────────────────────────── */
+.btn-cta-primary {
+  background: var(--primary-deep);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 16px 38px;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: background .2s, transform .15s;
+}
+.btn-cta-primary:hover { background: var(--primary-dark); color: #fff; transform: translateY(-2px); }
+
+.btn-cta-outline {
+  background: transparent;
+  color: var(--primary-deep);
+  border: 2px solid var(--primary-deep);
+  border-radius: 16px;
+  padding: 14px 38px;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: all .2s;
+}
+.btn-cta-outline:hover { background: var(--primary-deep); color: #fff; transform: translateY(-2px); }
+
+/* ── Stats ────────────────────────────────────── */
+.stat-number {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--primary-deep);
+}
+
+/* ── Section titles ───────────────────────────── */
+.section-badge {
+  background: #e0f2fe;
+  color: var(--primary-dark);
+  border-radius: 20px;
+  padding: 5px 18px;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .4px;
+  display: inline-block;
+}
+
+/* ── Feature cards ────────────────────────────── */
+.feature-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 30px;
+  border: 1px solid #e2e8f0;
+  height: 100%;
+  transition: box-shadow .2s, transform .2s;
+}
+.feature-card:hover { box-shadow: 0 12px 40px rgba(14,165,233,.12); transform: translateY(-4px); }
+
+.feature-icon {
+  width: 56px; height: 56px;
+  background: #e0f2fe;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  color: var(--primary-deep);
+  margin-bottom: 20px;
+}
+
+/* ── Problem section ──────────────────────────── */
+.problem-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #fecaca;
+  margin-bottom: 12px;
+}
+.problem-icon {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: #fef2f2; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; color: #ef4444;
+}
+
+.solution-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #bbf7d0;
+  margin-bottom: 12px;
+}
+.solution-icon {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: #f0fdf4; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; color: #22c55e;
+}
+
+/* ── Planos ───────────────────────────────────── */
+  .plano-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 2px solid #e2e8f0;
+    padding: 36px 32px;
+    height: 100%;
+    position: relative;
+    transition: border-color .2s, box-shadow .2s, transform .2s;
+  }
+  .plano-card:hover { box-shadow: 0 16px 48px rgba(0,0,0,.1); transform: translateY(-4px); }
+  .plano-card.destaque { border-color: #3b82f6; box-shadow: 0 8px 32px rgba(59,130,246,.18); }
+  .plano-card.ativo-atual { border-color: #22c55e; }
+
+  .plano-badge-popular {
+    position: absolute;
+    top: -14px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+    color: #fff; font-size: .72rem; font-weight: 700;
+    padding: 4px 18px; border-radius: 20px; white-space: nowrap;
+    letter-spacing: .5px; text-transform: uppercase;
+  }
+  .plano-badge-atual {
+    position: absolute;
+    top: -14px; left: 50%; transform: translateX(-50%);
+    background: #22c55e;
+    color: #fff; font-size: .72rem; font-weight: 700;
+    padding: 4px 18px; border-radius: 20px; white-space: nowrap;
+  }
+
+  .plano-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; margin-bottom: 18px;
+  }
+  .plano-nome { font-size: 1.2rem; font-weight: 700; color: #1e293b; }
+  .plano-desc { font-size: .85rem; color: #64748b; margin-top: 4px; min-height: 36px; }
+
+  .plano-preco { margin: 24px 0 20px; }
+  .plano-preco-valor { font-size: 2.6rem; font-weight: 800; color: #1e293b; line-height: 1; }
+  .plano-preco-periodo { font-size: .82rem; color: #94a3b8; margin-top: 4px; }
+  .plano-preco-anual { font-size: .78rem; color: #22c55e; font-weight: 600; margin-top: 2px; }
+
+  .plano-features { list-style: none; padding: 0; margin: 0 0 28px; }
+  .plano-features li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 7px 0; font-size: .875rem; color: #374151;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .plano-features li:last-child { border-bottom: none; }
+  .plano-features .feat-icon { flex-shrink: 0; margin-top: 1px; }
+  .feat-ok { color: #22c55e; }
+  .feat-no { color: #cbd5e1; text-decoration: line-through; }
+  .feat-no .feat-icon { color: #cbd5e1; }
+
+  .ciclo-toggle { background: #f1f5f9; border-radius: 12px; padding: 4px; display: inline-flex; }
+  .ciclo-btn {
+    padding: 8px 22px; border-radius: 9px; font-size: .875rem;
+    font-weight: 600; cursor: pointer; border: none; background: none;
+    color: #64748b; transition: all .2s;
+  }
+  .ciclo-btn.active { background: #fff; color: #1e293b; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+
+  .desconto-badge {
+    background: #dcfce7; color: #16a34a;
+    font-size: .7rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px; margin-left: 8px;
+  }
+
+  .custom-tooltip {
+  --bs-tooltip-bg: #3b82f6;
+  --bs-tooltip-color: #ffffff;
+}
+/* ── Depoimentos ──────────────────────────────── */
+.testimonial-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px;
+  border: 1px solid #e2e8f0;
+  height: 100%;
+}
+.testimonial-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-deep), #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 800; font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.stars { color: #f59e0b; font-size: .9rem; }
+
+/* ── CTA Final ────────────────────────────────── */
+.cta-gradient {
+  background: linear-gradient(135deg, #0EA5E9, #38BDF8);
+  border-radius: 28px;
+  padding: 72px 48px;
+}
+
+/* ── Footer ───────────────────────────────────── */
+footer { background: #0f172a; color: #94a3b8; padding: 48px 0 28px; }
+footer a { color: #94a3b8; text-decoration: none; }
+footer a:hover { color: #e0f2fe; }
+.footer-brand { color: #f8fafc; font-weight: 800; font-size: 1.2rem; }
+
+</style>
+</head>
+<body class="bg-gradient-custom">
+
+<!-- ════════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════ -->
+<nav class="navbar navbar-expand-lg py-4 sticky-top" style="backdrop-filter:blur(12px);background:rgba(248,250,252,.85);border-bottom:1px solid rgba(0,0,0,.06);">
+  <div class="container">
+    <a class="navbar-brand fw-bold fs-4" href="#" style="color:var(--primary-deep);">
+      <i class="bi bi-box-seam-fill me-2"></i>alugeSe
+    </a>
+    <button class="navbar-toggler border-0" data-bs-toggle="collapse" data-bs-target="#menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="menu">
+      <ul class="navbar-nav ms-auto gap-3 align-items-lg-center">
+        <li class="nav-item"><a class="nav-link" href="#funcionalidades">Funcionalidades</a></li>
+        <li class="nav-item"><a class="nav-link" href="#como-funciona">Como Funciona</a></li>
+        <li class="nav-item"><a class="nav-link" href="#planos">Planos</a></li>
+        <li class="nav-item"><a class="nav-link" href="#depoimentos">Depoimentos</a></li>
+      </ul>
+      <div class="ms-4 d-flex gap-2">
+        <a href="{% url 'accounts:login' %}" class="btn btn-outline-secondary rounded-3 px-4" style="font-weight:600;">Entrar</a>
+        <a href="#planos" class="btn btn-nav">Teste Grátis</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════ -->
+<section class="hero d-flex align-items-center py-5">
+  <div class="container">
+    <div class="row align-items-center g-5">
+
+      <!-- Texto -->
+      <div class="col-lg-6">
+        <span class="section-badge mb-4">
+          🎯 Para quem vive de locação
+        </span>
+
+        <h1 class="hero-title mb-4">
+          Gerencie suas locações com
+          <span class="highlight">controle total</span>
+          e zero planilha.
+        </h1>
+
+        <p class="lead mb-5" style="color:#475569;font-size:1.1rem;line-height:1.7;">
+          Chega de caderninho e Excel. O alugeSe foi feito para o
+          pequeno empreendedor que aluga equipamentos, móveis ou itens
+          para eventos — e quer saber em tempo real o que está saindo,
+          o que está atrasado e quanto está entrando.
+        </p>
+
+        <div class="d-flex flex-wrap gap-3 mb-5">
+          <a href="#planos" class="btn btn-cta-primary">
+            <i class="bi bi-rocket-takeoff me-2"></i>Começar grátis — 14 dias
+          </a>
+          <a href="#como-funciona" class="btn btn-cta-outline">
+            Ver como funciona
+          </a>
+        </div>
+
+        <!-- Micro-stats -->
+        <div class="d-flex gap-5 flex-wrap">
+          <div>
+            <div class="stat-number">+500</div>
+            <div class="small text-muted fw-500">Empreendedores</div>
+          </div>
+          <div>
+            <div class="stat-number">+18k</div>
+            <div class="small text-muted">Locações gerenciadas</div>
+          </div>
+          <div>
+            <div class="stat-number">0%</div>
+            <div class="small text-muted">Comissão sobre receita</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating cards -->
+      <div class="col-lg-6 position-relative d-none d-lg-block" style="min-height:440px;">
+
+        <!-- Card: alerta de atraso -->
+        <div class="glass hero-card card-1 floating">
+          <div class="tag">⚠️ Alerta de atraso</div>
+          <div>Tenda 10×10m</div>
+          <div class="val">3 dias em atraso</div>
+        </div>
+
+        <!-- Card: próxima devolução -->
+        <div class="glass hero-card card-2 floating-2">
+          <div class="tag">📅 Devolução amanhã</div>
+          <div>Mesa + 20 cadeiras</div>
+          <div class="val">R$ 280,00</div>
+        </div>
+
+        <!-- Card: receita -->
+        <div class="glass hero-card card-3 floating-3">
+          <div class="tag">💰 Receita este mês</div>
+          <div class="val" style="font-size:1.4rem;">R$ 4.720</div>
+          <div style="font-size:.75rem;color:#22c55e;font-weight:600;">↑ 18% vs mês anterior</div>
+        </div>
+
+        <!-- Imagem central: dashboard mockup -->
+        <div class="glass floating" style="border-radius:24px;padding:28px;box-shadow:0 20px 60px rgba(14,165,233,.15);margin:0 auto;max-width:380px;">
+          <!-- Mini dashboard fictício -->
+          <div style="font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;">
+            Dashboard — Hoje
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div style="background:#f0fdf4;border-radius:10px;padding:12px;">
+                <div style="font-size:.65rem;color:#64748b;">Locações ativas</div>
+                <div style="font-size:1.4rem;font-weight:800;color:#16a34a;">14</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div style="background:#fef2f2;border-radius:10px;padding:12px;">
+                <div style="font-size:.65rem;color:#64748b;">Em atraso</div>
+                <div style="font-size:1.4rem;font-weight:800;color:#dc2626;">2</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div style="background:#eff6ff;border-radius:10px;padding:12px;">
+                <div style="font-size:.65rem;color:#64748b;">Disponíveis</div>
+                <div style="font-size:1.4rem;font-weight:800;color:#2563eb;">87%</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div style="background:#fffbeb;border-radius:10px;padding:12px;">
+                <div style="font-size:.65rem;color:#64748b;">Devoluções hoje</div>
+                <div style="font-size:1.4rem;font-weight:800;color:#d97706;">3</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#f8fafc;border-radius:10px;padding:12px;">
+            <div style="font-size:.65rem;color:#64748b;margin-bottom:6px;">Próximas devoluções</div>
+            <div style="font-size:.78rem;display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;">
+              <span>Tenda 5×5m</span><span style="color:#dc2626;font-weight:600;">Hoje</span>
+            </div>
+            <div style="font-size:.78rem;display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0;">
+              <span>20 Cadeiras</span><span style="color:#d97706;font-weight:600;">Amanhã</span>
+            </div>
+            <div style="font-size:.78rem;display:flex;justify-content:space-between;padding:4px 0;">
+              <span>Som + Microfone</span><span style="color:#16a34a;font-weight:600;">Sexta</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     PROBLEMA × SOLUÇÃO
+════════════════════════════════════════════ -->
+<section class="py-5 bg-white">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="section-badge">O problema que resolvemos</span>
+      <h2 class="display-5 fw-bold mt-3">
+        Você não precisa mais adivinhar<br>
+        <span style="color:var(--primary-deep);">o que está saindo do seu estoque</span>
+      </h2>
+    </div>
+
+    <div class="row g-4 align-items-start">
+      <!-- Dores -->
+      <div class="col-lg-6">
+        <div class="mb-3 fw-bold text-danger">
+          <i class="bi bi-x-circle-fill me-2"></i>Sem o alugeSe
+        </div>
+        <div class="problem-item">
+          <div class="problem-icon"><i class="bi bi-file-earmark-excel"></i></div>
+          <div>
+            <div class="fw-semibold">Planilha que nunca bate</div>
+            <div class="small text-muted">Você não sabe quantas cadeiras saíram nem quais voltaram.</div>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-icon"><i class="bi bi-clock"></i></div>
+          <div>
+            <div class="fw-semibold">Cliente que não devolve</div>
+            <div class="small text-muted">Sem alerta automático, você só descobre quando vai locar de novo.</div>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-icon"><i class="bi bi-calendar-x"></i></div>
+          <div>
+            <div class="fw-semibold">Conflito de datas</div>
+            <div class="small text-muted">Dois clientes agendaram para o mesmo período sem você perceber.</div>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-icon"><i class="bi bi-graph-down"></i></div>
+          <div>
+            <div class="fw-semibold">Faturamento no escuro</div>
+            <div class="small text-muted">Você não sabe quais produtos rendem mais nem quem é seu melhor cliente.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Soluções -->
+      <div class="col-lg-6">
+        <div class="mb-3 fw-bold text-success">
+          <i class="bi bi-check-circle-fill me-2"></i>Com o alugeSe
+        </div>
+        <div class="solution-item">
+          <div class="solution-icon"><i class="bi bi-archive-fill"></i></div>
+          <div>
+            <div class="fw-semibold">Estoque sempre atualizado</div>
+            <div class="small text-muted">Cada item registrado em tempo real. Sabe exatamente o que está disponível hoje.</div>
+          </div>
+        </div>
+        <div class="solution-item">
+          <div class="solution-icon"><i class="bi bi-bell-fill"></i></div>
+          <div>
+            <div class="fw-semibold">Alertas de vencimento automáticos</div>
+            <div class="small text-muted">Notificação no sistema um dia antes da devolução. Sem deixar passar.</div>
+          </div>
+        </div>
+        <div class="solution-item">
+          <div class="solution-icon"><i class="bi bi-calendar-check-fill"></i></div>
+          <div>
+            <div class="fw-semibold">Validação de disponibilidade inteligente</div>
+            <div class="small text-muted">O sistema bloqueia automaticamente conflitos de data antes de criar a locação.</div>
+          </div>
+        </div>
+        <div class="solution-item">
+          <div class="solution-icon"><i class="bi bi-bar-chart-fill"></i></div>
+          <div>
+            <div class="fw-semibold">Relatórios de faturamento e ranking</div>
+            <div class="small text-muted">Veja seus produtos mais locados, clientes VIP e receita por período.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     FUNCIONALIDADES
+════════════════════════════════════════════ -->
+<section class="py-5" id="funcionalidades">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="section-badge">Tudo que você precisa</span>
+      <h2 class="display-5 fw-bold mt-3">
+        Feito para quem loca
+        <span style="color:var(--primary-deep);">de verdade</span>
+      </h2>
+      <p class="text-secondary mt-2">Seja tenda, cadeira, som, gerador, mesas ou qualquer equipamento — o alugeSe cobre.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+          <h5 class="fw-bold">Controle de Locações</h5>
+          <p class="text-muted small">Crie, edite, finalize e cancele locações. Cada item com quantidade, valor e período. Histórico completo por cliente.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-shield-fill-check"></i></div>
+          <h5 class="fw-bold">Bloqueio de Conflitos</h5>
+          <p class="text-muted small">Tenta locar 10 tendas quando só há 7 disponíveis? O sistema barra antes de confirmar. Regra de negócio real, não só aviso.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-calendar3"></i></div>
+          <h5 class="fw-bold">Agenda Visual</h5>
+          <p class="text-muted small">Calendário com todas as locações ativas, pendentes e atrasadas. Visualize períodos ocupados e livres de um jeito claro.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-people-fill"></i></div>
+          <h5 class="fw-bold">Cadastro de Clientes</h5>
+          <p class="text-muted small">CPF/CNPJ, telefone, endereço e histórico de locações. Sabe quem são seus melhores clientes e quantas vezes locaram.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-bell-fill"></i></div>
+          <h5 class="fw-bold">Notificações Internas</h5>
+          <p class="text-muted small">Alertas automáticos para locações vencendo amanhã, em atraso e devoluções confirmadas. Tudo dentro do sistema.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-bar-chart-fill"></i></div>
+          <h5 class="fw-bold">Relatórios de Negócio</h5>
+          <p class="text-muted small">Faturamento por mês, produtos mais locados, taxa de ocupação do estoque e ranking dos melhores clientes. Decisão com dados.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     PARA QUEM É
+════════════════════════════════════════════ -->
+<section class="py-5 bg-white">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="section-badge">Para quem é o alugeSe</span>
+      <h2 class="display-5 fw-bold mt-3">Reconhece seu negócio aqui?</h2>
+    </div>
+    <div class="row g-4 justify-content-center">
+      {% for negocio in negocios %}
+      {% endfor %}
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="text-center p-3 rounded-4 h-100" style="background:#f8fafc;border:1px solid #e2e8f0;">
+          <div style="font-size:2.2rem;margin-bottom:8px;">🎪</div>
+          <div class="fw-semibold small">Locação de Tendas</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="text-center p-3 rounded-4 h-100" style="background:#f8fafc;border:1px solid #e2e8f0;">
+          <div style="font-size:2.2rem;margin-bottom:8px;">🪑</div>
+          <div class="fw-semibold small">Mesas & Cadeiras</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="text-center p-3 rounded-4 h-100" style="background:#f8fafc;border:1px solid #e2e8f0;">
+          <div style="font-size:2.2rem;margin-bottom:8px;">🔊</div>
+          <div class="fw-semibold small">Som & Iluminação</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="text-center p-3 rounded-4 h-100" style="background:#f8fafc;border:1px solid #e2e8f0;">
+          <div style="font-size:2.2rem;margin-bottom:8px;">⚡</div>
+          <div class="fw-semibold small">Geradores</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="text-center p-3 rounded-4 h-100" style="background:#f8fafc;border:1px solid #e2e8f0;">
+          <div style="font-size:2.2rem;margin-bottom:8px;">🎨</div>
+          <div class="fw-semibold small">Decoração para Eventos</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="text-center p-3 rounded-4 h-100" style="background:#f8fafc;border:1px solid #e2e8f0;">
+          <div style="font-size:2.2rem;margin-bottom:8px;">🔧</div>
+          <div class="fw-semibold small">Equipamentos em Geral</div>
+        </div>
+      </div>
+    </div>
+    <p class="text-center text-muted mt-4 small">
+      Se você aluga qualquer coisa com data de início e devolução — o alugeSe é para você.
+    </p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     COMO FUNCIONA
+════════════════════════════════════════════ -->
+<section class="py-5" id="como-funciona">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="section-badge">Como Funciona</span>
+      <h2 class="display-5 fw-bold mt-3">
+        Do cadastro ao controle em
+        <span style="color:var(--primary-deep);">3 passos</span>
+      </h2>
+    </div>
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="glass p-5 h-100 rounded-5 shadow-sm">
+          <div style="width:52px;height:52px;background:var(--primary-deep);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;font-weight:800;margin-bottom:20px;">1</div>
+          <h4 class="fw-bold">Cadastre seu estoque</h4>
+          <p class="text-secondary">Adicione seus produtos com foto, código interno, quantidade e valor por dia. Organize por categorias como Tendas, Mobiliário e Sonorização.</p>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass p-5 h-100 rounded-5 shadow-sm">
+          <div style="width:52px;height:52px;background:var(--primary-deep);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;font-weight:800;margin-bottom:20px;">2</div>
+          <h4 class="fw-bold">Registre as locações</h4>
+          <p class="text-secondary">Informe o cliente, os itens, datas de saída e devolução. O sistema calcula o valor automaticamente e bloqueia conflitos de agenda na hora.</p>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass p-5 h-100 rounded-5 shadow-sm">
+          <div style="width:52px;height:52px;background:var(--primary-deep);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;font-weight:800;margin-bottom:20px;">3</div>
+          <h4 class="fw-bold">Acompanhe tudo</h4>
+          <p class="text-secondary">Dashboard com o que sai, o que volta, o que está atrasado e quanto entrou no mês. Tome decisões com dados reais sobre seu negócio.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     PLANOS
+════════════════════════════════════════════ -->
+<section class="py-5 bg-white" id="planos">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="section-badge">Planos e Preços</span>
+      <h2 class="display-5 fw-bold mt-3">Comece de graça, cresça no seu ritmo</h2>
+      <p class="text-secondary">Sem comissão sobre suas locações. Você paga apenas pela plataforma.</p>
+    </div>
+
+   <div class="row g-4 justify-content-center mb-5">
+  {% for item in planos_com_recursos %}
+  {% with plano=item.plano recursos=item.recursos %}
+  <div class="col-md-6 col-xl-4">
+    <div class="plano-card {% if plano.destaque %}destaque{% endif %} {% if plano_atual and plano_atual.slug == plano.slug %}ativo-atual{% endif %}">
+
+      {% if plano_atual and plano_atual.slug == plano.slug %}
+        <div class="plano-badge-atual">✓ Plano Atual</div>
+      {% elif plano.destaque %}
+        <div class="plano-badge-popular">⚡ Mais Popular</div>
+      {% endif %}
+
+      <!-- Ícone -->
+      <div class="plano-icon" style="background:{{ plano.cor }}18;color:{{ plano.cor }};">
+        <i class="bi {{ plano.icone }}"></i>
+      </div>
+
+      <div class="plano-nome">{{ plano.nome }}</div>
+      <div class="plano-desc">{{ plano.descricao }}</div>
+
+      <!-- Preço -->
+      <div class="plano-preco">
+        {% if plano.preco_mensal == 0 %}
+          <div class="plano-preco-valor">Grátis</div>
+        {% else %}
+          <div class="plano-preco-valor d-none" data-ciclo="anual">
+            R$ <span>{{ plano.preco_anual }}</span>
+          </div>
+          <div class="plano-preco-valor" data-ciclo="mensal">
+            R$ <span>{{ plano.preco_mensal }}</span>
+          </div>
+          <div class="plano-preco-periodo" data-ciclo="mensal">por mês</div>
+          <div class="plano-preco-periodo d-none" data-ciclo="anual">por ano</div>
+          {% if plano.desconto_anual_pct > 0 %}
+          <div class="plano-preco-anual d-none" data-ciclo="anual">
+            Economize {{ plano.desconto_anual_pct }}% vs mensal
+          </div>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      <!-- Limites (sempre visíveis, sem estado dev) -->
+      <ul class="plano-features">
+        <li>
+          <span class="feat-icon feat-ok"><i class="bi bi-people-fill"></i></span>
+          <span>
+            {% if plano.clientes_ilimitados %}<strong>Clientes ilimitados</strong>
+            {% else %}Até <strong>{{ plano.limite_clientes }}</strong> clientes{% endif %}
+          </span>
+        </li>
+        <li>
+          <span class="feat-icon feat-ok"><i class="bi bi-archive-fill"></i></span>
+          <span>
+            {% if plano.produtos_ilimitados %}<strong>Produtos ilimitados</strong>
+            {% else %}Até <strong>{{ plano.limite_produtos }}</strong> produtos{% endif %}
+          </span>
+        </li>
+         <li>
+          <span class="feat-icon feat-ok"><i class="bi bi-tags-fill"></i></span>
+          <span>
+            {% if plano.categorias_ilimitados %}
+              <strong>Categorias ilimitadas</strong>
+            {% else %}
+              Até <strong>{{ plano.limite_categorias }}</strong> categorias
+            {% endif %}
+          </span>
+        </li>
+        <li>
+          <span class="feat-icon feat-ok"><i class="bi bi-person-badge-fill"></i></span>
+          <span>
+            {% if plano.usuarios_ilimitados %}<strong>Usuários ilimitados</strong>
+            {% else %}Até <strong>{{ plano.limite_usuarios }}</strong> usuário{% if plano.limite_usuarios != 1 %}s / Licenças{% endif %}{% endif %}
+          </span>
+        </li>
+        <!-- Recursos dinâmicos via RECURSOS_CONFIG -->
+        {% for rec in recursos %}
+        {% with cfg=rec.config estado=rec.estado %}
+        
+        {% if estado == 'ativo' %}
+        {# ── ATIVO: ícone verde, texto normal ── #}
+        <li>
+          <span class="feat-icon feat-ok"><i class="bi {{ cfg.icone }}"></i></span>
+          <span >{{ cfg.display_name }}</span>
+        </li>
+
+        {% elif estado == 'indisponivel' %}
+        {# ── INDISPONÍVEL NO PLANO: ícone × cinza, texto riscado ── #}
+        <li class="feat-no">
+          <span class="feat-icon"><i class="bi bi-x-circle"></i></span>
+          <span>{{ cfg.display_name }}</span>
+        </li>
+
+        {% elif estado == 'em_desenvolvimento' %}
+        {# ── EM DESENVOLVIMENTO: ícone cinza, badge "Em breve" ── #}
+        <li class="feat-dev">
+          <span class="feat-icon"><i class="bi {{ cfg.icone }}"></i></span>
+          <span>
+            <a href="#" data-bs-custom-class="custom-tooltip" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{ cfg.descricao }}">{{ cfg.display_name }}</a>
+          
+              <small class="text-warning ms-1">
+            <i class="bi-clock-history text-warning"></i> 
+            {% if cfg.previsao_lancamento %} · {{ cfg.previsao_lancamento }}{% endif %}
+            ...Em breve
+          </small>
+
+          </span>
+        </li>
+        
+        {% endif %}
+
+        {% endwith %}
+        {% endfor %}
+      </ul>
+      
+      <a class="btn btn-primary w-100" href="https://wa.me/55993839825?text=Olá,%20Quero%20mais%20informaçoes%20sobre%20o%20plano%20{{ plano.nome }}." target="_blank">
+       <i class="bi bi-whatsapp"></i>
+      </a>
+    </div>
+  </div>
+  {% endwith %}
+  {% endfor %}
+</div>
+
+    <div class="text-center mt-4 text-muted small">
+      <i class="bi bi-shield-check-fill text-success me-1"></i>
+      Garantia de 14 dias. Cancele quando quiser. Sem taxa de setup.
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     DEPOIMENTOS
+════════════════════════════════════════════ -->
+<section class="py-5" id="depoimentos">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="section-badge">Depoimentos</span>
+      <h2 class="display-5 fw-bold mt-3">O que dizem quem já usa</h2>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="testimonial-card">
+          <div class="stars mb-3">★★★★★</div>
+          <p class="text-muted mb-4">"Antes eu usava planilha e vivia com peça faltando sem saber. Hoje abro o dashboard e vejo tudo em segundos. Economizei horas de trabalho por semana."</p>
+          <div class="d-flex align-items-center gap-3">
+            <div class="testimonial-avatar">M</div>
+            <div>
+              <div class="fw-bold" style="font-size:.9rem;">Marcos Oliveira</div>
+              <div class="text-muted small">Locação de tendas e mobiliário — SP</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="testimonial-card">
+          <div class="stars mb-3">★★★★★</div>
+          <p class="text-muted mb-4">"O bloqueio de conflito de datas me salvou várias vezes. Tinha cliente pedindo o mesmo gerador que já estava locado. Agora o sistema avisa na hora."</p>
+          <div class="d-flex align-items-center gap-3">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#22c55e,#0ea5e9);">P</div>
+            <div>
+              <div class="fw-bold" style="font-size:.9rem;">Patrícia Santos</div>
+              <div class="text-muted small">Locadora de equipamentos para eventos — RJ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="testimonial-card">
+          <div class="stars mb-3">★★★★★</div>
+          <p class="text-muted mb-4">"Os relatórios me mostraram que minha cadeira Tiffany era o produto mais lucrativo. Comprei mais 40 e aumentei o faturamento em 30% no mês seguinte."</p>
+          <div class="d-flex align-items-center gap-3">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">R</div>
+            <div>
+              <div class="fw-bold" style="font-size:.9rem;">Ricardo Ferreira</div>
+              <div class="text-muted small">Buffet e locação de móveis — MG</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     CTA FINAL
+════════════════════════════════════════════ -->
+<section class="py-5">
+  <div class="container">
+    <div class="cta-gradient text-center text-white">
+      <h2 class="display-4 fw-bold mb-4">
+        Seu negócio de locação<br>merece mais do que planilha.
+      </h2>
+      <p class="lead mb-5" style="opacity:.9;max-width:560px;margin:0 auto 2rem;">
+        Comece hoje com 14 dias grátis. Sem cartão de crédito.<br>
+        Configure em menos de 10 minutos.
+      </p>
+      <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="{% url 'accounts:login' %}" class="btn btn-light btn-lg px-5 rounded-4 fw-bold" style="color:var(--primary-deep);">
+          <i class="bi bi-rocket-takeoff me-2"></i>Criar conta grátis
+        </a>
+        <a href="#como-funciona" class="btn btn-outline-light btn-lg px-5 rounded-4 fw-semibold">
+          Ver demonstração
+        </a>
+      </div>
+      <div class="mt-4 small" style="opacity:.75;">
+        <i class="bi bi-shield-check me-1"></i>14 dias grátis ·
+        <i class="bi bi-x-circle me-1 ms-2"></i>Sem cartão ·
+        <i class="bi bi-arrow-left-right me-1 ms-2"></i>Cancele quando quiser
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4">
+        <div class="footer-brand mb-3">
+          <i class="bi bi-box-seam-fill me-2" style="color:var(--primary);"></i>alugeSe
+        </div>
+        <p class="small" style="color:#64748b;line-height:1.7;">
+          Sistema de gestão para quem aluga equipamentos, móveis e itens para eventos.
+          Controle total sem complicação.
+        </p>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="fw-semibold mb-3" style="color:#e2e8f0;font-size:.85rem;">Produto</div>
+        <div class="d-flex flex-column gap-2">
+          <a href="#funcionalidades" class="small">Funcionalidades</a>
+          <a href="#planos" class="small">Planos</a>
+          <a href="#como-funciona" class="small">Como Funciona</a>
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="fw-semibold mb-3" style="color:#e2e8f0;font-size:.85rem;">Conta</div>
+        <div class="d-flex flex-column gap-2">
+          <a href="{% url 'accounts:login' %}" class="small">Entrar</a>
+          <a href="#planos" class="small">Criar conta</a>
+        </div>
+      </div>
+    </div>
+    <div class="border-top pt-3 d-flex justify-content-between align-items-center flex-wrap gap-2" style="border-color:#1e293b!important;">
+      <div class="small">© 2026 alugeSe. Todos os direitos reservados.</div>
+      <div class="small">Feito para quem vive de locação 🎪</div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}
+<script>
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</script>
+{% endblock %}
+
+</body>
+</html>

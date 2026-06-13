@@ -1,0 +1,15 @@
+User-agent: *
+Disallow: /admin
+Disallow: /README.txt
+User-agent: *
+Allow: /$
+Allow: /
+Allow: /vendas/*
+
+# CSS, JS, Images
+Allow: /static/js/scripts.js
+Allow: /static/css/styles.css
+Allow: /static/assets/favicon.ico
+# Paths (no clean URLs)
+Allow: /media/produtos/*.png
+Allow: /media/proodutos/*.jpg

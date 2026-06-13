@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login — alugeSe</title>
+  <link rel="icon" href="{% static 'box-seam-fill.svg' %}" type="image/svg+xml" />
+    <meta property="og:title" content="AlugaSe" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="." />
+  <meta property="og:url" content="." />
+  <meta property="og:site_name" content="AlugeSe" />
+  <meta property="og:description"content="Feito para quem loca de verdade" />
+  <meta name="Title"content="AlugeSe" />
+  <meta name="Author" content="Vitor Gomes" />
+  <meta name="description" content="Desenvolvedor FullStack.">
+  <meta name="KeyWords" content="locações,planilha,eventos ,tenda, cadeira, som, gerador, mesas ou qualquer equipamento." />
+  <meta name="generator" content="Microsoft FrontPage 5.0" />
+  <meta name="Language" CONTENT="Portuguese" />
+  <meta name="Rating" CONTENT="Safe For Kids" />
+  <meta name="Doc-class" CONTENT="Completed" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <style>
+    body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .login-card { background:#fff; border-radius:20px; padding:44px 40px; width:100%; max-width:420px; box-shadow:0 25px 60px rgba(0,0,0,.3); }
+    .login-logo { width:52px;height:52px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;margin:0 auto 16px; }
+    .login-title { text-align:center;font-size:1.5rem;font-weight:700;color:#1e293b;margin-bottom:4px; }
+    .login-sub { text-align:center;color:#64748b;font-size:.875rem;margin-bottom:28px; }
+    .form-label { font-weight:500;font-size:.85rem;color:#374151; }
+    .form-control { border-radius:9px;border:1.5px solid #e2e8f0;padding:10px 14px;font-size:.9rem; }
+    .form-control:focus { border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+    .btn-login { background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;border-radius:9px;padding:11px;font-weight:600;font-size:.95rem;color:#fff;width:100%;margin-top:6px; }
+    .btn-login:hover { opacity:.92;color:#fff; }
+    .input-icon { position:relative; }
+    .input-icon i { position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#94a3b8; }
+    .input-icon input { padding-left:38px; }
+    .alert { border-radius:9px;border:none;font-size:.85rem; }
+  </style>
+</head>
+<body>
+<div class="login-card">
+  <div class="login-logo"><i class="bi bi-box-seam-fill"></i></div>
+  <div class="login-title">alugeSe</div>
+  <div class="login-sub">Sistema de Gestão de Locações</div>
+
+  {% if form.errors %}
+  <div class="alert alert-danger mb-3"><i class="bi bi-exclamation-circle me-2"></i>Usuário ou senha inválidos.</div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Usuário</label>
+      <div class="input-icon">
+        <i class="bi bi-person"></i>
+        <input type="text" name="username" class="form-control" placeholder="seu.usuario" autofocus required />
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Senha</label>
+      <div class="input-icon">
+        <i class="bi bi-lock"></i>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" required />
+      </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="remember" id="remember" />
+        <label class="form-check-label" for="remember" style="font-size:.82rem;color:#64748b;">Lembrar-me</label>
+      </div>
+      <a href="{% url 'accounts:password_reset' %}" style="font-size:.82rem;color:#3b82f6;text-decoration:none;">Esqueci a senha</a>
+    </div>
+    <button type="submit" class="btn btn-login">
+      <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+    </button>
+    <input type="hidden" name="next" value="{{ next }}" />
+  </form>
+  <p class="text-center mt-4 mb-0" style="font-size:.75rem;color:#94a3b8;">alugeSe &copy; 2026 — Todos os direitos reservados</p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

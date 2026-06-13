@@ -1,0 +1,104 @@
+{% extends 'base.html' %}{% load filters %}
+{% block title %}Produtos{% endblock %}
+{% block page_title %}Produtos{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-header-title">Produtos</h1>
+    <p class="page-header-sub">{{ page_obj.paginator.count }} produto(s) cadastrado(s)</p>
+  </div>
+  {% if user_perfil|can_edit %}
+  <a href="{% url 'produtos:criar' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Novo Produto</a>
+  {%endif%}
+</div>
+<div class="table-card">
+  <div class="p-3 border-bottom">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <div class="search-bar">
+          <i class="bi bi-search"></i>
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por nome ou código..." />
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select name="categoria" class="form-select">
+          <option value="">Todas as categorias</option>
+          {% for cat in categorias %}<option value="{{ cat.pk }}" {% if categoria_sel == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="status" class="form-select">
+          <option value="">Todos os status</option>
+          {% for val, label in status_choices %}<option value="{{ val }}" {% if status_sel == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-outline-secondary flex-grow-1">Filtrar</button>
+        {% if q or categoria_sel or status_sel %}<a href="{% url 'produtos:lista' %}" class="btn btn-outline-danger">✕</a>{% endif %}
+      </div>
+    </form>
+  </div>
+  {% if produtos %}
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Produto</th><th>Categoria</th><th>Código</th><th>Disponível</th><th>Ocupação</th><th>Valor/dia</th><th>Status</th><th class="text-end">Ações</th></tr></thead>
+      <tbody>
+      {% for p in produtos %}
+      <tr>
+        <td>
+          <div class="d-flex align-items-center gap-3">
+            {% if p.foto %}
+              <img src="{{ p.foto.url }}" class="product-img" alt="{{ p.nome }}" />
+            {% else %}
+              <div class="product-img-placeholder"><i class="bi bi-image"></i></div>
+            {% endif %}
+            <div>
+              <a href="{% url 'produtos:detalhe' p.pk %}" class="fw-semibold text-decoration-none text-dark">{{ p.nome }}</a>
+              {% if p.descricao %}<div class="text-muted small" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.descricao }}</div>{% endif %}
+            </div>
+          </div>
+        </td>
+        <td class="text-muted small">{{ p.categoria.nome|default:"—" }}</td>
+        <td><span class="badge bg-light text-dark border font-monospace">{{ p.codigo_interno }}</span></td>
+        <td>
+          <span class="fw-semibold {% if p.quantidade_disponivel == 0 %}text-danger{% elif p.quantidade_disponivel < 3 %}text-warning{% else %}text-success{% endif %}">
+            {{ p.quantidade_disponivel }}
+          </span>
+          <span class="text-muted small">/ {{ p.quantidade_total }}</span>
+        </td>
+        <td style="min-width:120px;">
+          <div class="progress progress-sm">
+            <div class="progress-bar {% if p.percentual_ocupacao >= 90 %}bg-danger{% elif p.percentual_ocupacao >= 60 %}bg-warning{% else %}bg-success{% endif %}"
+                 style="width:{{ p.percentual_ocupacao }}%"></div>
+          </div>
+          <div class="text-muted" style="font-size:.7rem;">{{ p.percentual_ocupacao }}% ocupado</div>
+        </td>
+        <td class="fw-semibold">R$ {{ p.valor_diario|money  }}</td>
+        <td><span class="status-badge badge-{{ p.status }}">{{ p.get_status_display }}</span></td>
+        <td class="text-end">
+          <div class="btn-group btn-group-sm">
+            <a href="{% url 'produtos:detalhe' p.pk %}" class="btn btn-outline-secondary" title="Ver"><i class="bi bi-eye"></i></a>
+            {% if user_perfil|can_edit %}
+            <a href="{% url 'produtos:editar' p.pk %}" class="btn btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+            <a href="{% url 'produtos:excluir' p.pk %}" class="btn btn-outline-danger" title="Excluir"><i class="bi bi-trash"></i></a>
+            {%endif%}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'partials/paginacao.html' %}
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-archive"></i><p>Nenhum produto encontrado.</p>
+
+        <a href="{% url 'produtos:criar' %}" class="btn btn-primary mt-3">
+            Cadastrar primeiro Produto
+        </a>
+  
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

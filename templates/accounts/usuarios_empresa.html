@@ -1,0 +1,266 @@
+
+{% extends 'base.html' %}
+{% block title %}Usuários{% endblock %}
+{% block page_title %}Usuários{% endblock %}
+
+{% block content %}
+
+{# ── Credenciais geradas (exibe uma única vez) ──────────────── #}
+{% if credenciais_novo_usuario %}
+{% with c=credenciais_novo_usuario %}
+<div class="alert alert-dismissible fade show mb-4" role="alert"
+     style="background:#f0fdf4;border:2px solid #86efac;border-radius:14px;">
+  <div class="d-flex gap-3 align-items-start">
+    <div style="width:44px;height:44px;background:#dcfce7;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">
+      🔑
+    </div>
+    <div class="flex-grow-1">
+      <div class="fw-bold text-success mb-2">
+        Usuário <strong>{{ c.nome }}</strong> criado com sucesso — anote as credenciais agora!
+      </div>
+      <div class="p-3 rounded-3 font-monospace small" style="background:#fff;border:1px solid #bbf7d0;line-height:2;">
+        <div><span class="text-muted me-2">Usuário:</span> <strong>{{ c.username }}</strong></div>
+        <div><span class="text-muted me-2">E-mail:</span>  <strong>{{ c.email }}</strong></div>
+        <div><span class="text-muted me-2">Senha:</span>
+          <strong id="senhaNova">{{ c.senha }}</strong>
+          <button type="button" class="btn btn-xs ms-2"
+                  style="font-size:.7rem;padding:1px 8px;border:1px solid #86efac;border-radius:6px;background:#f0fdf4;"
+                  onclick="navigator.clipboard.writeText('{{ c.senha }}');this.textContent='Copiado!'">
+            Copiar
+          </button>
+        </div>
+      </div>
+      <div class="small text-muted mt-2">
+        <i class="bi bi-exclamation-triangle me-1 text-warning"></i>
+        Esta senha <strong>não será exibida novamente</strong>. Envie ao usuário por canal seguro.
+      </div>
+    </div>
+  </div>
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endwith %}
+{% endif %}
+
+{# ── Page header ────────────────────────────────────────────── #}
+<div class="page-header">
+  <div>
+    <h1 class="page-header-title">Usuários</h1>
+    <p class="page-header-sub">Gerencie quem tem acesso ao sistema da sua empresa</p>
+  </div>
+</div>
+
+{# ── Barra de uso do plano ──────────────────────────────────── #}
+{% if limite_usuarios is not None %}
+<div class="form-card mb-4" style="padding:16px 22px;">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <div style="width:40px;height:40px;background:#eff6ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#3b82f6;">
+        <i class="bi bi-person-badge-fill"></i>
+      </div>
+      <div>
+        <div class="fw-semibold small">Usuários do plano</div>
+        <div class="text-muted" style="font-size:.78rem;">
+          {% if usuarios_ilimitado %}
+            Ilimitado
+          {% elif limite_atingido %}
+            <span class="text-danger fw-semibold">Limite atingido — {{ total_usuarios }} de {{ limite_usuarios }}</span>
+          {% else %}
+            {{ total_usuarios }} de {{ limite_usuarios }} utilizados
+            · <span class="text-success">{{ usuarios_restantes }} disponível(is)</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if not usuarios_ilimitado %}
+    <div style="min-width:200px;">
+      <div class="progress progress-sm">
+        <div class="progress-bar
+          {% if usuarios_pct >= 100 %}bg-danger
+          {% elif usuarios_pct >= 80 %}bg-warning
+          {% else %}bg-success{% endif %}"
+          style="width:{{ usuarios_pct }}%;">
+        </div>
+      </div>
+      <div class="text-muted mt-1" style="font-size:.72rem;text-align:right;">{{ usuarios_pct }}% utilizado</div>
+    </div>
+    {% endif %}
+
+    {% if limite_atingido %}
+    <a href="{% url 'planos' %}" class="btn btn-warning btn-sm">
+      <i class="bi bi-arrow-up-circle me-1"></i>Upgrade para mais usuários
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+
+  {# ── Lista de usuários ──────────────────────────────────────── #}
+  <div class="col-lg-8">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-badge"></i>Usuários ({{ usuarios|length }})</span>
+      </div>
+
+      {% if usuarios %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Usuário</th>
+              <th>E-mail</th>
+              <th>Perfil</th>
+              <th class="text-center">Status</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for perfil in usuarios %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                {# Avatar com inicial #}
+                <div style="width:36px;height:36px;border-radius:50%;
+                  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+                  display:flex;align-items:center;justify-content:center;
+                  color:#fff;font-weight:700;font-size:.82rem;flex-shrink:0;">
+                  {{ perfil.user.get_full_name|default:perfil.user.username|first|upper }}
+                </div>
+                <div>
+                  <div class="fw-semibold" style="line-height:1.2;">
+                    {{ perfil.user.get_full_name|default:perfil.user.username }}
+                    {% if perfil.user == request.user %}
+                    <span class="badge bg-primary ms-1" style="font-size:.6rem;vertical-align:middle;">Você</span>
+                    {% endif %}
+                  </div>
+                  <div class="text-muted small">@{{ perfil.user.username }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="text-muted small align-middle">{{ perfil.user.email|default:"—" }}</td>
+            <td class="align-middle">
+              <span class="status-badge
+                {% if perfil.role == 'admin' %}badge-ativa
+                {% elif perfil.role == 'operador' %}badge-pendente
+                {% else %}badge-finalizada{% endif %}">
+                {{ perfil.get_role_display }}
+              </span>
+            </td>
+            <td class="text-center align-middle">
+              <span class="status-badge {% if perfil.ativo %}badge-ativa{% else %}badge-cancelada{% endif %}">
+                {% if perfil.ativo %}Ativo{% else %}Inativo{% endif %}
+              </span>
+            </td>
+            <td class="text-end align-middle">
+              <div class="btn-group btn-group-sm">
+                <a href="{% url 'accounts:editar_usuario' perfil.pk %}"
+                   class="btn btn-outline-primary" title="Editar dados e perfil">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                {% if perfil.user != request.user %}
+                <form method="post" action="{% url 'accounts:toggle_usuario' perfil.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit"
+                    class="btn {% if perfil.ativo %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                    title="{% if perfil.ativo %}Desativar acesso{% else %}Reativar acesso{% endif %}"
+                    onclick="return confirm('{% if perfil.ativo %}Desativar{% else %}Ativar{% endif %} o usuário {{ perfil.user.username }}?')">
+                    <i class="bi bi-person-{% if perfil.ativo %}slash{% else %}check{% endif %}"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-people"></i>
+        <p>Nenhum usuário cadastrado ainda.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Formulário de novo usuário ─────────────────────────────── #}
+  <div class="col-lg-4">
+    <div class="form-card">
+      <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+        <i class="bi bi-person-plus me-2"></i>Adicionar Usuário
+      </h6>
+
+      {% if limite_atingido %}
+      {# Plano cheio — mostra aviso em vez do formulário #}
+      <div class="text-center py-4">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🚫</div>
+        <h6 class="fw-bold text-danger">Limite atingido</h6>
+        <p class="text-muted small">
+          Seu plano permite até <strong>{{ limite_usuarios }}</strong> usuário(s).
+          Faça upgrade para adicionar mais.
+        </p>
+        <a href="{% url 'planos' %}" class="btn btn-warning w-100">
+          <i class="bi bi-arrow-up-circle me-2"></i>Ver planos
+        </a>
+      </div>
+
+      {% else %}
+      {# Formulário disponível #}
+      <div class="p-3 rounded-3 mb-3" style="background:#eff6ff;border:1px solid #bfdbfe;">
+        <div class="small text-primary">
+          <i class="bi bi-info-circle me-1"></i>
+          Senha gerada automaticamente — exibida <strong>uma única vez</strong> após criar.
+        </div>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Nome completo *</label>
+          {{ form_novo.nome }}
+          {% if form_novo.nome.errors %}
+          <div class="text-danger small mt-1">{{ form_novo.nome.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">E-mail de acesso *</label>
+          {{ form_novo.email }}
+          {% if form_novo.email.errors %}
+          <div class="text-danger small mt-1">{{ form_novo.email.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Perfil de acesso *</label>
+          {{ form_novo.role }}
+          <div class="form-text mt-2" style="font-size:.78rem;">
+            <strong>Administrador</strong> — acesso total, incluindo configurações de usuários.<br>
+            <strong>Operador</strong> — clientes, produtos e locações. Sem configurações e Relatorios.<br>
+            <strong>Somente leitura</strong> — apenas consultas e relatórios.
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-person-plus me-2"></i>Criar Usuário
+        </button>
+      </form>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+// Garante que as credenciais fiquem visíveis ao topo da página
+document.addEventListener('DOMContentLoaded', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+</script>
+{% endblock %}
