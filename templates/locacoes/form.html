@@ -231,7 +231,6 @@
 {% endblock %}
 
 {% block extra_js %}
-
 {# Passa os produtos como JSON para o JS — build do select é feito em JS puro #}
 <script>
 'use strict';
@@ -425,11 +424,10 @@ verificarEmpty();
 $('#id_cliente').on('change', function(){
 
     const clienteId = $(this).val();
-
     if(!clienteId)
         return;
 
-    fetch(`/clientes/cliente/${clienteId}/`)
+    fetch(`{% url 'clientes:cliente_detalhe' pk=0 %}`.replace('0', clienteId))
         .then(response => response.json())
         .then(data => {
 

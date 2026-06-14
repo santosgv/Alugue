@@ -445,11 +445,11 @@
     <a href="{% url 'assinatura_painel' %}" class="sidebar-link {% if 'assinatura' in request.path %}active{% endif %}">
       <i class="bi bi-receipt"></i> Assinatura
     </a>
+  {% endif %}
+  {% if user.is_superuser  %}
     <a href="{% url 'empresa_config' %}" class="sidebar-link {% if 'configuracoes' in request.path %}active{% endif %}">
       <i class="bi bi-sliders"></i> Configurações
     </a>
-    {% endif %}
-    {% if user.is_superuser  %}
     <a href="{% url 'admin_plataforma' %}" class="sidebar-link {% if 'plataforma' in request.path %}active{% endif %}">
       <i class="bi bi-building-gear"></i> Plataforma
     </a>
