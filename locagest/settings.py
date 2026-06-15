@@ -152,7 +152,7 @@ MIDDLEWARE = [
         'django.middleware.common.CommonMiddleware',
         'django.middleware.csrf.CsrfViewMiddleware',
         'django.contrib.auth.middleware.AuthenticationMiddleware',
-        # PlanoMiddleware não é necessário: tenant já resolvido pelo subdomínio
+        'core.middleware.PlanoMiddleware', 
         'core.middleware.AssinaturaGuardMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -195,9 +195,9 @@ DATABASES = {
          'ENGINE': 'django_tenants.postgresql_backend',
          'NAME':     os.environ.get('DB_NAME', 'postgres'),
          'USER':     os.environ.get('DB_USER', 'postgres'),
-         'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
+         'PASSWORD': os.environ.get('DB_PASSWORD', 'Senha123@'),
          'HOST':     os.environ.get('DB_HOST', 'localhost'),
-         'PORT':     os.environ.get('DB_PORT', '5432'),
+         'PORT':     os.environ.get('DB_PORT', '5433'),
     }
 }
 
