@@ -220,7 +220,7 @@
         {% endwith %}
         {% endfor %}
       </ul>
-            <form method="post" action="{% url 'mudar_plano' %}">
+        <form method="post" action="{% url 'mudar_plano' %}">
             {% csrf_token %}
             <input type="hidden" name="plano" value="{{ plano.pk }}" />
             <input type="hidden" name="ciclo" value="mensal" class="ciclo-input" />
@@ -230,7 +230,7 @@
               {% if plano.preco_mensal > 0 %}
                 onclick="if(!confirm('Confirmar mudança para o plano {{ plano.nome }}?'))return false; this.form.ciclo.value = document.querySelector('.ciclo-btn.active').dataset.ciclo;"
               {% endif %}>
-              Nos envie uma Mensagem para trocar {{ plano.nome }}
+              Nos envie uma Mensagem para Mudar {{ plano.nome }}
             </button>
           </form>
     </div>
