@@ -3,7 +3,24 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import datetime
 from .recursos_config import RECURSOS_CONFIG, is_em_desenvolvimento
+from django_tenants.models import TenantMixin
 
+
+# ── django-tenants: importação condicional ────────────────
+# Quando django_tenants estiver instalado e configurado,
+# TenantCompany herda de TenantMixin automaticamente.
+# Em modo MVP (SQLite / sem django-tenants) herda de models.Model.
+try:
+    from django_tenants.models import TenantMixin, DomainMixin
+    _TENANTS_ATIVO = True
+except ImportError:
+    _TENANTS_ATIVO = False
+    class TenantMixin(models.Model):
+        class Meta:
+            abstract = True
+    class DomainMixin(models.Model):
+        class Meta:
+            abstract = True
 # ─────────────────────────────────────────────────────────────
 # PLANO DE ASSINATURA
 # ─────────────────────────────────────────────────────────────
@@ -159,7 +176,28 @@ class SubscriptionPlan(models.Model):
 # EMPRESA (TENANT)
 # ─────────────────────────────────────────────────────────────
 
-class TenantCompany(models.Model):
+class TenantCompany(TenantMixin, models.Model):
+
+    #Empresa / Tenant.
+
+    #Herança:
+    #─ MVP (sem django-tenants): TenantMixin é um stub abstract, sem campos extras.
+    #─ Com django-tenants: TenantMixin adiciona `schema_name` (obrigatório),
+    #  `create_schema` e `drop_schema`. O campo auto_create_schema=True
+    #  faz o django-tenants criar o schema PostgreSQL automaticamente
+    #  ao salvar o primeiro registro.
+#
+    #Ponto de migração:
+    #─ Quando ativar django-tenants, rode:
+    #    python manage.py migrate_schemas --shared
+    #─ Para criar um novo tenant:
+    #    python manage.py create_tenant
+    #\"\"\"
+
+    # django-tenants: cria schema automaticamente ao salvar
+    # Em modo MVP este atributo é ignorado (TenantMixin é stub)
+    auto_create_schema = True
+
     nome           = models.CharField(max_length=200)
     cnpj           = models.CharField(max_length=18, blank=True)
     email          = models.EmailField(blank=True)
@@ -190,6 +228,22 @@ class TenantCompany(models.Model):
         sub = self.assinatura_ativa
         return sub.plano if sub else self.plano
 
+
+class Domain(DomainMixin):
+
+    #Domínio / subdomínio vinculado a um TenantCompany.
+
+    #Com django-tenants:
+    #─ Cada empresa pode ter um ou mais domínios.
+    #─ Ex: empresa1.locagest.com.br → schema empresa1
+    #─ O campo `tenant` (FK) e `domain` (CharField) vêm do DomainMixin.
+    #─ O campo `is_primary` define o domínio principal.
+
+    #Em modo MVP:
+    #─ DomainMixin é stub abstract, esta tabela não é criada.
+    #─ A migração é gerada mas não aplicada (sem django-tenants instalado).
+  
+    pass
 
 # ─────────────────────────────────────────────────────────────
 # ASSINATURA

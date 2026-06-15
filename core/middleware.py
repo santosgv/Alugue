@@ -28,7 +28,7 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils.deprecation import MiddlewareMixin
 from django.utils import timezone
-
+from django_tenants.utils import get_tenant
 from .models import TenantCompany
 from .services import AssinaturaService
 
@@ -64,7 +64,7 @@ class PlanoMiddleware(MiddlewareMixin):
         if request.user.is_superuser:
             return
 
-        empresa = self._resolver_empresa(request.user)
+        empresa = get_tenant(request)
         if not empresa:
             return
 

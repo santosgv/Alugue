@@ -74,6 +74,7 @@ O resto do código (services, views, templates, mixins) permanece igual.
 
 from pathlib import Path
 import os
+from django.contrib.messages import constants
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -96,6 +97,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_tenants',
     # Projeto
     'accounts',   # shared (perfis de usuário)
     'core',       # shared (planos, assinaturas, empresas)
@@ -107,21 +109,54 @@ INSTALLED_APPS = [
     'relatorios',
 ]
 
+SHARED_APPS = [
+       'django_tenants',     
+       'accounts',           
+       'core',               
+       'clientes',
+       'produtos',
+       'locacoes',
+        'agenda',
+        'notificacoes',
+        'relatorios',
+       'django.contrib.contenttypes',
+       'django.contrib.auth',
+       'django.contrib.admin',
+       'django.contrib.sessions',
+       'django.contrib.messages',
+       'django.contrib.staticfiles',
+   ]
+
+TENANT_APPS = [           # um schema isolado por empresa
+       'clientes',
+       'produtos',
+       'locacoes',
+       'agenda',
+       'notificacoes',
+   ]
+
+INSTALLED_APPS = list(SHARED_APPS) + [a for a in TENANT_APPS if a not in SHARED_APPS]
+
 # ── Middleware ─────────────────────────────────────────────────
 # Para django-tenants: substituir PlanoMiddleware por
 #   'django_tenants.middleware.main.TenantMainMiddleware'
 # e manter os demais.
+# ── Middleware ─────────────────────────────────────────────────
+
+    # Com django-tenants: TenantMainMiddleware DEVE ser o primeiro
+    # Ele resolve o schema pelo subdomínio antes de qualquer outra coisa
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'core.middleware.PlanoMiddleware',    # → substituir por TenantMainMiddleware
-    'core.middleware.AssinaturaGuardMiddleware', # bloqueia acesso com assinatura inativa
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
+        'django_tenants.middleware.main.TenantMainMiddleware',
+        'django.middleware.security.SecurityMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.middleware.common.CommonMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        # PlanoMiddleware não é necessário: tenant já resolvido pelo subdomínio
+        'core.middleware.AssinaturaGuardMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    ]
 
 ROOT_URLCONF = 'locagest.urls'
 
@@ -154,22 +189,22 @@ WSGI_APPLICATION = 'locagest.wsgi.application'
 # Para produção / django-tenants: PostgreSQL (obrigatório).
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME':   os.environ.get('DB_NAME',   str(BASE_DIR / 'db.sqlite3')),
+        #'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
+        #'NAME':   os.environ.get('DB_NAME',   str(BASE_DIR / 'db.sqlite3')),
         # PostgreSQL / django-tenants:
-        # 'ENGINE':   'django.db.backends.postgresql',
-        # 'NAME':     os.environ.get('DB_NAME', 'postgres'),
-        # 'USER':     os.environ.get('DB_USER', 'postgres'),
-        # 'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
-        # 'HOST':     os.environ.get('DB_HOST', 'localhost'),
-        # 'PORT':     os.environ.get('DB_PORT', '5432'),
+         'ENGINE': 'django_tenants.postgresql_backend',
+         'NAME':     os.environ.get('DB_NAME', 'postgres'),
+         'USER':     os.environ.get('DB_USER', 'postgres'),
+         'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
+         'HOST':     os.environ.get('DB_HOST', 'localhost'),
+         'PORT':     os.environ.get('DB_PORT', '5432'),
     }
 }
 
-# ── django-tenants (descomente ao migrar) ─────────────────────
-# TENANT_MODEL        = 'core.TenantCompany'
-# TENANT_DOMAIN_MODEL = 'core.Domain'
-# DATABASE_ROUTERS    = ['django_tenants.routers.TenantSyncRouter']
+DATABASE_ROUTERS = ['django_tenants.routers.TenantSyncRouter']
+
+TENANT_MODEL          = 'core.TenantCompany'  
+TENANT_DOMAIN_MODEL   = 'core.Domain'           
 
 # ── Auth ───────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
@@ -206,3 +241,12 @@ EMAIL_BACKEND      = os.environ.get(
     'django.core.mail.backends.console.EmailBackend'
 )
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@locagest.com.br')
+
+
+MESSAGE_TAGS = {
+    constants.DEBUG: 'alert-primary',
+    constants.ERROR: 'alert-danger',
+    constants.SUCCESS: 'alert-success',
+    constants.INFO: 'alert-info',
+    constants.WARNING: 'alert-warning',
+}
