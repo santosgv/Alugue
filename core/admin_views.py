@@ -12,7 +12,7 @@ from django.utils import timezone
 from django import forms
 import datetime
 
-from .models import SubscriptionPlan, TenantCompany, Assinatura
+from .models import Domain, SubscriptionPlan, TenantCompany, Assinatura
 from .services import AssinaturaService, LimiteService
 from accounts.models import PerfilUsuario
 from accounts.services import UsuarioEmpresaService
@@ -261,7 +261,15 @@ class EmpresaCreateView(SuperAdminMixin, CreateView):
 
     def form_valid(self, form):
         empresa = form.save()
+        # Cria o domínio
+        subdomain = form.cleaned_data['subdomain']
+        domain = Domain.objects.create(
+                        tenant=empresa,
+                        domain=f'{subdomain}.seusite.com',
+                        is_primary=True
+                    )
         msgs    = [f'Empresa "{empresa.nome}" criada com sucesso.']
+
 
         # ── 1. Assinatura ──────────────────────────────────────
         form_sub = CriarAssinaturaForm(self.request.POST)
@@ -297,6 +305,7 @@ class EmpresaCreateView(SuperAdminMixin, CreateView):
             # Guarda na sessão para exibir no redirect
             self.request.session['nova_empresa_credenciais'] = {
                 'empresa': empresa.nome,
+                'schema_name': empresa.nome,
                 'username': user.username,
                 'senha': senha,
                 'email': user.email,

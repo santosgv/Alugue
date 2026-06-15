@@ -3,25 +3,9 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import datetime
 from .recursos_config import RECURSOS_CONFIG, is_em_desenvolvimento
-from django_tenants.models import TenantMixin
+from django_tenants.models import TenantMixin,DomainMixin
 
-
-# ── django-tenants: importação condicional ────────────────
-# Quando django_tenants estiver instalado e configurado,
-# TenantCompany herda de TenantMixin automaticamente.
-# Em modo MVP (SQLite / sem django-tenants) herda de models.Model.
-try:
-    from django_tenants.models import TenantMixin, DomainMixin
-    _TENANTS_ATIVO = True
-except ImportError:
-    _TENANTS_ATIVO = False
-    class TenantMixin(models.Model):
-        class Meta:
-            abstract = True
-    class DomainMixin(models.Model):
-        class Meta:
-            abstract = True
-# ─────────────────────────────────────────────────────────────
+#─────────────────────────────────────
 # PLANO DE ASSINATURA
 # ─────────────────────────────────────────────────────────────
 
@@ -197,6 +181,7 @@ class TenantCompany(TenantMixin, models.Model):
     # django-tenants: cria schema automaticamente ao salvar
     # Em modo MVP este atributo é ignorado (TenantMixin é stub)
     auto_create_schema = True
+    auto_drop_schema = True
 
     nome           = models.CharField(max_length=200)
     cnpj           = models.CharField(max_length=18, blank=True)
