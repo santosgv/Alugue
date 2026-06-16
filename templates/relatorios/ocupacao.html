@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load filters %}
 {% block title %}Ocupação do Estoque{% endblock %}
 {% block page_title %}Relatório — Ocupação do Estoque{% endblock %}
 {% block extra_css %}{% include 'relatorios/base_relatorio.html' %}{% endblock %}
@@ -40,7 +40,7 @@
   <div class="col-6 col-md-3">
     <div class="rel-kpi kpi-green">
       <div class="rel-kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
-      <div class="rel-kpi-value">{{ total_estoque|add:"-"|add:total_em_uso }}</div>
+      <div class="rel-kpi-value">{{ total_estoque|subtract:total_em_uso }}</div>
       <div class="rel-kpi-label">Unidades disponíveis</div>
     </div>
   </div>
