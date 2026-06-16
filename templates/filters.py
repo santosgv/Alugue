@@ -162,3 +162,19 @@ def render_button(context, permission_required, button_text, button_url):
         'button_text': button_text,
         'button_url': button_url,
     }
+
+@register.filter
+def subtract(value, arg):
+    """Subtrai arg de value"""
+    try:
+        return int(value) - int(arg)
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
+def sub(value, arg):
+    """Alias para subtract"""
+    try:
+        return float(value) - float(arg)
+    except (ValueError, TypeError):
+        return 0
