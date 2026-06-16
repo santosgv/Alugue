@@ -74,18 +74,19 @@ O resto do código (services, views, templates, mixins) permanece igual.
 
 from pathlib import Path
 import os
+from decouple import config
 from django.contrib.messages import constants
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get(
+SECRET_KEY = config(
     'SECRET_KEY',
     'django-insecure-locagest-mvp-change-in-production-2024'
 )
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = ['*']
 
 # ── Apps ──────────────────────────────────────────────────────
 # Quando migrar para django-tenants, separar em SHARED_APPS e
@@ -189,15 +190,15 @@ WSGI_APPLICATION = 'locagest.wsgi.application'
 # Para produção / django-tenants: PostgreSQL (obrigatório).
 DATABASES = {
     'default': {
-        #'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
-        #'NAME':   os.environ.get('DB_NAME',   str(BASE_DIR / 'db.sqlite3')),
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
+        'NAME':   os.environ.get('DB_NAME',   str(BASE_DIR / 'db.sqlite3')),
         # PostgreSQL / django-tenants:
-         'ENGINE': 'django_tenants.postgresql_backend',
-         'NAME':     os.environ.get('DB_NAME', 'postgres'),
-         'USER':     os.environ.get('DB_USER', 'postgres'),
-         'PASSWORD': os.environ.get('DB_PASSWORD', 'Senha123@'),
-         'HOST':     os.environ.get('DB_HOST', 'localhost'),
-         'PORT':     os.environ.get('DB_PORT', '5433'),
+        # 'ENGINE':   'django.db.backends.postgresql',
+        # 'NAME':     os.environ.get('DB_NAME', 'postgres'),
+        # 'USER':     os.environ.get('DB_USER', 'postgres'),
+        # 'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
+        # 'HOST':     os.environ.get('DB_HOST', 'localhost'),
+        # 'PORT':     os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -241,12 +242,3 @@ EMAIL_BACKEND      = os.environ.get(
     'django.core.mail.backends.console.EmailBackend'
 )
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@locagest.com.br')
-
-
-MESSAGE_TAGS = {
-    constants.DEBUG: 'alert-primary',
-    constants.ERROR: 'alert-danger',
-    constants.SUCCESS: 'alert-success',
-    constants.INFO: 'alert-info',
-    constants.WARNING: 'alert-warning',
-}
