@@ -74,17 +74,18 @@ O resto do código (services, views, templates, mixins) permanece igual.
 
 from pathlib import Path
 import os
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get(
+SECRET_KEY = config(
     'SECRET_KEY',
     'django-insecure-locagest-mvp-change-in-production-2024'
 )
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = ['*']
 
 # ── Apps ──────────────────────────────────────────────────────
 # Quando migrar para django-tenants, separar em SHARED_APPS e
@@ -154,15 +155,15 @@ WSGI_APPLICATION = 'locagest.wsgi.application'
 # Para produção / django-tenants: PostgreSQL (obrigatório).
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME':   os.environ.get('DB_NAME',   str(BASE_DIR / 'db.sqlite3')),
+        'ENGINE': config('DB_ENGINE'),
+        'NAME':   config('DB_NAME'),
         # PostgreSQL / django-tenants:
         # 'ENGINE':   'django.db.backends.postgresql',
-        # 'NAME':     os.environ.get('DB_NAME', 'postgres'),
-        # 'USER':     os.environ.get('DB_USER', 'postgres'),
-        # 'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
-        # 'HOST':     os.environ.get('DB_HOST', 'localhost'),
-        # 'PORT':     os.environ.get('DB_PORT', '5432'),
+        # 'NAME':     config('DB_NAME', 'postgres'),
+        # 'USER':     config('DB_USER', 'postgres'),
+        # 'PASSWORD': config('DB_PASSWORD', '1234'),
+        # 'HOST':     config('DB_HOST', 'localhost'),
+        # 'PORT':     config('DB_PORT', '5432'),
     }
 }
 
@@ -199,10 +200,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ── Email ──────────────────────────────────────────────────────
-# Produção: trocar para smtp ou serviço transacional (SendGrid, SES, etc.)
-EMAIL_BACKEND      = os.environ.get(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend'
-)
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@locagest.com.br')
+DEFAULT_FROM_EMAIL=config('EMAIL_HOST_USER')
+EMAIL_BACKEND ='django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST_USER= config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD= config('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS=True
+EMAIL_PORT =587
+EMAIL_HOST='smtp.office365.com'
