@@ -190,15 +190,15 @@ WSGI_APPLICATION = 'locagest.wsgi.application'
 # Para produção / django-tenants: PostgreSQL (obrigatório).
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME':   os.environ.get('DB_NAME',   str(BASE_DIR / 'db.sqlite3')),
+        #'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
+        #'NAME':   os.environ.get('DB_NAME',   str(BASE_DIR / 'db.sqlite3')),
         # PostgreSQL / django-tenants:
-        # 'ENGINE':   'django.db.backends.postgresql',
-        # 'NAME':     os.environ.get('DB_NAME', 'postgres'),
-        # 'USER':     os.environ.get('DB_USER', 'postgres'),
-        # 'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
-        # 'HOST':     os.environ.get('DB_HOST', 'localhost'),
-        # 'PORT':     os.environ.get('DB_PORT', '5432'),
+         'ENGINE':   'django.db.backends.postgresql',
+         'NAME':     os.environ.get('DB_NAME', 'postgres'),
+         'USER':     os.environ.get('DB_USER', 'postgres'),
+         'PASSWORD': os.environ.get('DB_PASSWORD', '1234'),
+         'HOST':     os.environ.get('DB_HOST', 'localhost'),
+         'PORT':     os.environ.get('DB_PORT', '5432'),
     }
 }
 
