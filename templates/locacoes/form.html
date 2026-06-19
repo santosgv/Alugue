@@ -3,6 +3,7 @@
 {% block page_title %}{{ titulo }}{% endblock %}
 
 {% block extra_css %}
+
 <style>
   .formset-row {
     background: #f8fafc;
@@ -135,11 +136,21 @@
 
         {# Container dos itens #}
         <div id="formset-container">
-
           {# Itens existentes (edição) ou vazio (criação com extra=0) #}
-          {% for item_form in formset %}
-          <div class="formset-row" data-form-index="{{ forloop.counter0 }}">
 
+          {% for item_form in formset %}
+
+          {% if item_form.quantidade.errors %}
+          <div class="text-danger" style="font-size:.72rem;">{{ item_form.quantidade.errors }}</div>
+          {% endif %}
+                {% if item_form.produto.errors %}
+          <div class="text-danger" style="font-size:.72rem;">{{ item_form.produto.errors }}</div>
+          {% endif %}
+          {% if item_form.valor_unitario.errors %}
+          <div class="text-danger" style="font-size:.72rem;">{{ item_form.valor_unitario.errors }}</div>
+          {% endif %}
+
+          <div class="formset-row" data-form-index="{{ forloop.counter0 }}">
             {# Campo id e DELETE ocultos — essenciais para o Django processar #}
             {{ item_form.id }}
             <div style="display:none;">{{ item_form.DELETE }}</div>
@@ -148,23 +159,14 @@
               <div class="col-md-5">
                 <label class="form-label small fw-semibold">Produto</label>
                 {{ item_form.produto }}
-                {% if item_form.produto.errors %}
-                  <div class="text-danger" style="font-size:.72rem;">{{ item_form.produto.errors }}</div>
-                {% endif %}
               </div>
               <div class="col-md-2">
                 <label class="form-label small fw-semibold">Qtd.</label>
                 {{ item_form.quantidade }}
-                {% if item_form.quantidade.errors %}
-                  <div class="text-danger" style="font-size:.72rem;">{{ item_form.quantidade.errors }}</div>
-                {% endif %}
               </div>
               <div class="col-md-3">
                 <label class="form-label small fw-semibold">Valor/dia (R$)</label>
                 {{ item_form.valor_unitario }}
-                {% if item_form.valor_unitario.errors %}
-                  <div class="text-danger" style="font-size:.72rem;">{{ item_form.valor_unitario.errors }}</div>
-                {% endif %}
               </div>
               <div class="col-md-2 d-flex align-items-end">
                 <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-item" title="Remover item">
@@ -233,6 +235,13 @@
 {% block extra_js %}
 {# Passa os produtos como JSON para o JS — build do select é feito em JS puro #}
 <script>
+  document.querySelectorAll('input[type="date"]').forEach(function(input) {
+    input.addEventListener('click', function() {
+      if (this.showPicker) {
+        this.showPicker();
+      }
+    });
+  });
 'use strict';
 
 // ── Dados vindos do servidor ──────────────────────────────
@@ -290,7 +299,7 @@ function criarLinha(index) {
       <div class="col-md-3">
         <label class="form-label small fw-semibold">Valor/dia (R$)</label>
         <input type="number" name="itens-${index}-valor_unitario"
-               class="form-control item-valor" step="0.01" placeholder="0,00" />
+               class="form-control item-valor" maxlength="10" step="0.01" placeholder="0,00" />
       </div>
       <div class="col-md-2 d-flex align-items-end">
         <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-item" title="Remover">
@@ -376,8 +385,7 @@ function atualizarTudo() {
 
     // Subtotal por linha
     const subEl = row.querySelector('.sub-val');
-    if (subEl) subEl.textContent = 'R$ ' + sub.toFixed(2).replace('.', ',');
-
+    if (subEl) subEl.textContent =formatarMoeda(sub);
     if (qtd > 0 && val > 0) {
       total += sub;
       numItens++;
@@ -385,7 +393,7 @@ function atualizarTudo() {
   });
 
   document.getElementById('preview-valor').textContent =
-    'R$ ' + total.toFixed(2).replace('.', ',');
+    formatarMoeda(total);
   document.getElementById('preview-itens').textContent = numItens;
 }
 
@@ -443,6 +451,21 @@ $('#id_cliente').on('change', function(){
 
 });
 
+
+function formatarMoeda(valor) {
+    return valor.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
+}
+
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('item-valor')) {
+        if (e.target.value.length > 10) {
+            e.target.value = e.target.value.slice(0, 10);
+        }
+    }
+});
 </script>
 </script>
 {% endblock %}
