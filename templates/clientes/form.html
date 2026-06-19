@@ -20,11 +20,13 @@
             {{ form.nome }}
             {% if form.nome.errors %}<div class="text-danger small mt-1">{{ form.nome.errors }}</div>{% endif %}
           </div>
-          <div class="col-md-4">
-            <label class="form-label">CPF/CNPJ *</label>
-            {{ form.cpf_cnpj }}
-            {% if form.cpf_cnpj.errors %}<div class="text-danger small mt-1" data-mask="000.000.000-00">{{ form.cpf_cnpj.errors }}</div>{% endif %}
-          </div>
+        <div class="col-md-4">
+        <label class="form-label">CPF/CNPJ *</label>
+        {{ form.cpf_cnpj }}
+        {% if form.cpf_cnpj.errors %}
+          <div class="text-danger small mt-1">{{ form.cpf_cnpj.errors }}</div>
+        {% endif %}
+      </div>
           <div class="col-md-6">
             <label class="form-label">Telefone *</label>
             {{ form.telefone }}
@@ -64,7 +66,7 @@
 <script>
 $(document).ready(function () {
 
-    // ── Telefone ──
+    // ── Telefone: máscara ──
     var comportamento_telefone = function (val) {
         return val.replace(/\D/g, '').length === 11
             ? '(00) 00000-0000'
@@ -76,17 +78,156 @@ $(document).ready(function () {
         }
     });
 
-    // ── CPF / CNPJ ──
-    var comportamento_cpf_cnpj = function (val) {
-        return val.replace(/\D/g, '').length <= 11
-            ? '000.000.000-009'
-            : '00.000.000/0000-00';
-    };
-    $('#id_cpf_cnpj').mask(comportamento_cpf_cnpj, {
-        onKeyPress: function (val, e, field, options) {
-            field.mask(comportamento_cpf_cnpj(val), options);
+        // ── Telefone: validação visual ──
+    $(document).on('blur', '#id_telefone', function () {
+        var raw = $(this).val().replace(/\D/g, '');
+
+        $(this).siblings('.telefone-feedback').remove();
+
+        if (raw.length === 0) {
+            $(this).removeClass('is-valid is-invalid');
+            return;
+        }
+
+        var valido = validarTelefone(raw);
+
+        if (valido) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+            $(this).after(
+                '<div class="telefone-feedback invalid-feedback" style="display:block">' +
+                'Telefone inválido. Informe DDD + número (10 ou 11 dígitos).' +
+                '</div>'
+            );
         }
     });
+
+        $(document).on('focus', '#id_telefone', function () {
+        $(this).removeClass('is-valid is-invalid');
+        $(this).siblings('.telefone-feedback').remove();
+    });
+
+    // Bloqueia submit se telefone inválido
+    $('form').on('submit', function (e) {
+        var campo = $('#id_telefone');
+        if (campo.length === 0) return;
+
+        var raw = campo.val().replace(/\D/g, '');
+        if (raw.length > 0 && !validarTelefone(raw)) {
+            e.preventDefault();
+            campo.addClass('is-invalid').focus();
+        }
+    });
+
+    function validarTelefone(raw) {
+    // Deve ter 10 (fixo) ou 11 (celular) dígitos
+    if (raw.length !== 10 && raw.length !== 11) {
+        return false;
+    }
+
+    var ddd = parseInt(raw.substring(0, 2), 10);
+
+    // DDDs válidos no Brasil: 11 a 99 (excluindo alguns não atribuídos)
+    var dddsValidos = [
+        11,12,13,14,15,16,17,18,19,
+        21,22,24,27,28,
+        31,32,33,34,35,37,38,
+        41,42,43,44,45,46,47,48,49,
+        51,53,54,55,
+        61,62,63,64,65,66,67,68,69,
+        71,73,74,75,77,79,
+        81,82,83,84,85,86,87,88,89,
+        91,92,93,94,95,96,97,98,99
+    ];
+
+    if (dddsValidos.indexOf(ddd) === -1) {
+        return false;
+    }
+
+    // Celular (11 dígitos) deve começar com 9 após o DDD
+    if (raw.length === 11) {
+        var primeiroDigito = raw.charAt(2);
+        if (primeiroDigito !== '9') {
+            return false;
+        }
+    }
+
+    // Bloqueia sequências repetidas (ex: 11111111111) — número claramente inválido
+    var numeroSemDDD = raw.substring(2);
+    if (/^(\d)\1+$/.test(numeroSemDDD)) {
+        return false;
+    }
+
+    return true;
+}
+
+    // ── CPF / CNPJ ──
+$(document).on('input', '#id_cpf_cnpj', function () {
+    var valor = $(this).val();
+
+    // Remove tudo que não for letra ou número
+    valor = valor.replace(/[^a-zA-Z0-9]/g, '');
+
+    // Limita a 14 caracteres (tamanho máximo do CNPJ)
+    valor = valor.substring(0, 14);
+
+    // Detecta se tem letra -> força CNPJ (CPF é só numérico)
+    var temLetra = /[a-zA-Z]/.test(valor);
+
+    if (!temLetra && valor.length <= 11) {
+        // ── Máscara de CPF: 000.000.000-00 ──
+        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+        valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+        // ── Máscara de CNPJ alfanumérico: AA.AAA.AAA/AAAA-NN ──
+        // Os 12 primeiros caracteres podem ser letra ou número (maiúsculo)
+        // Os 2 últimos (dígitos verificadores) continuam sempre numéricos
+        valor = valor.toUpperCase();
+
+        var base = valor.substring(0, 12);
+        var dv = valor.substring(12, 14).replace(/\D/g, ''); // só números no DV
+
+        var formatado = base;
+        formatado = formatado.replace(/^([A-Z0-9]{2})([A-Z0-9])/, '$1.$2');
+        formatado = formatado.replace(/^([A-Z0-9]{2})\.([A-Z0-9]{3})([A-Z0-9])/, '$1.$2.$3');
+        formatado = formatado.replace(/^([A-Z0-9]{2})\.([A-Z0-9]{3})\.([A-Z0-9]{3})([A-Z0-9]+)/, '$1.$2.$3/$4');
+
+        valor = dv ? formatado + '-' + dv : formatado;
+    }
+
+    $(this).val(valor);
+});
+
+// Validação visual no blur
+$(document).on('blur', '#id_cpf_cnpj', function () {
+    var raw = $(this).val().replace(/[^a-zA-Z0-9]/g, '');
+    var valido = raw.length === 11 || raw.length === 14;
+
+    $(this).siblings('.cpf-cnpj-feedback').remove();
+
+    if (raw.length === 0) {
+        $(this).removeClass('is-valid is-invalid');
+        return;
+    }
+
+    if (valido) {
+        $(this).removeClass('is-invalid').addClass('is-valid');
+    } else {
+        $(this).removeClass('is-valid').addClass('is-invalid');
+        $(this).after(
+            '<div class="cpf-cnpj-feedback invalid-feedback" style="display:block">' +
+            'CPF deve ter 11 dígitos ou CNPJ 14 caracteres.' +
+            '</div>'
+        );
+    }
+});
+
+$(document).on('focus', '#id_cpf_cnpj', function () {
+    $(this).removeClass('is-valid is-invalid');
+    $(this).siblings('.cpf-cnpj-feedback').remove();
+});
 
     // ── E-mail: validação visual em tempo real ──
     var regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;

@@ -23,9 +23,12 @@ class LocacaoForm(forms.ModelForm):
             if data_fim < data_inicio:
                 raise forms.ValidationError("A data fim não pode ser anterior à data de início.")
         return cleaned
+    
+
 
 
 class ItemLocacaoForm(forms.ModelForm):
+
     class Meta:
         model = ItemLocacao
         fields = ['produto', 'quantidade', 'valor_unitario']
@@ -34,6 +37,13 @@ class ItemLocacaoForm(forms.ModelForm):
             'quantidade': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'valor_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
+    def clean_quantidade(self):
+        quantidade = self.cleaned_data.get('quantidade')
+        if quantidade <= 0:
+            raise forms.ValidationError(
+                "A quantidade deve ser maior que zero."
+            )
+        return quantidade
 
 
 ItemLocacaoFormSet = inlineformset_factory(

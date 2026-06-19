@@ -53,20 +53,25 @@ def money(value):
 @register.filter
 def cpf_cnpj(value):
     """
-    Formata CPF ou CNPJ.
+    Formata CPF ou CNPJ (incluindo CNPJ alfanumérico, vigente desde 2026).
+    CPF: sempre numérico, 11 dígitos -> 000.000.000-00
+    CNPJ: 12 primeiros caracteres podem ser letra ou número,
+          os 2 últimos dígitos verificadores são sempre numéricos -> AA.AAA.AAA/AAAA-00
     """
     if not value:
         return ""
 
-    numero = re.sub(r"\D", "", str(value))
+    # Mantém apenas letras e números (remove pontuação já existente)
+    limpo = re.sub(r"[^a-zA-Z0-9]", "", str(value)).upper()
 
-    if len(numero) == 11:
-        return f"{numero[:3]}.{numero[3:6]}.{numero[6:9]}-{numero[9:]}"
+    if len(limpo) == 11:
+        # CPF é sempre numérico
+        return f"{limpo[:3]}.{limpo[3:6]}.{limpo[6:9]}-{limpo[9:]}"
 
-    if len(numero) == 14:
+    if len(limpo) == 14:
         return (
-            f"{numero[:2]}.{numero[2:5]}.{numero[5:8]}/"
-            f"{numero[8:12]}-{numero[12:]}"
+            f"{limpo[:2]}.{limpo[2:5]}.{limpo[5:8]}/"
+            f"{limpo[8:12]}-{limpo[12:]}"
         )
 
     return value
