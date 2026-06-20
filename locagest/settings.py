@@ -113,6 +113,8 @@ INSTALLED_APPS = [
 
 SHARED_APPS = [
        'django_tenants',     
+       'django.contrib.sites',
+       'django.contrib.sitemaps',
        'accounts',           
        'core',               
        'clientes',
