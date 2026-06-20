@@ -1,10 +1,6 @@
 from django.urls import path
 from . import views, admin_views
-from django.contrib.sitemaps.views import sitemap
 
-sitemaps = {
-    'sitemap': views.Sitemap,
-}
 
 urlpatterns = [
     # ── App do usuário final ───────────────────────────────────
@@ -16,7 +12,6 @@ urlpatterns = [
     path('assinatura/cancelar/',   views.CancelarAssinaturaView.as_view(),   name='cancelar_assinatura'),
     path('configuracoes/',         views.EmpresaConfigView.as_view(),        name='empresa_config'),
     path('robots.txt',             views.robots,                             name='robots_txt'),
-    path('sitemap.xml',sitemap, {'sitemaps': sitemaps}),
 
     # ── Painel do dono da plataforma (superuser) ───────────────
     path('plataforma/',

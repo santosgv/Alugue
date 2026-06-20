@@ -16,7 +16,7 @@ import os
 from .models import SubscriptionPlan, Assinatura
 from .services import AssinaturaService, LimiteService
 from .forms import MudarPlanoForm, CancelarAssinaturaForm, TenantCompanyForm
-from django.contrib import sitemaps
+
 
 # ─────────────────────────────────────────────────────────────
 # DASHBOARD
@@ -274,17 +274,3 @@ def robots(request):
         with open(path,'r') as arq:
             return HttpResponse(arq, content_type='text/plain')
         
-
-class Sitemap(sitemaps.Sitemap):
-    priority = 0.8
-    changefreq = "annual"
-
-    def items(self):
-        return [
-            "pagina_vendas",
-            "robots_txt",
-            "accounts:login",
-        ]
-
-    def location(self, item):
-        return reverse(item)

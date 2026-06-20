@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'django.contrib.sitemaps',
     # Projeto
     'accounts',   # shared (perfis de usuário)
@@ -208,3 +209,5 @@ EMAIL_HOST_PASSWORD= config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS=True
 EMAIL_PORT =587
 EMAIL_HOST='smtp.office365.com'
+
+SITE_ID = 1
