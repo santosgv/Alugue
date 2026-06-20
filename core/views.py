@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.views.generic import TemplateView, FormView, View
 from django.shortcuts import redirect, get_object_or_404, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.decorators.cache import cache_page
 from accounts.models import PerfilUsuario
@@ -16,7 +16,7 @@ import os
 from .models import SubscriptionPlan, Assinatura
 from .services import AssinaturaService, LimiteService
 from .forms import MudarPlanoForm, CancelarAssinaturaForm, TenantCompanyForm
-
+from django.contrib import sitemaps
 
 # ─────────────────────────────────────────────────────────────
 # DASHBOARD
@@ -273,3 +273,18 @@ def robots(request):
         path = os.path.join(settings.BASE_DIR,'templates/robots.txt')
         with open(path,'r') as arq:
             return HttpResponse(arq, content_type='text/plain')
+        
+
+class Sitemap(sitemaps.Sitemap):
+    priority = 0.8
+    changefreq = "annual"
+
+    def items(self):
+        return [
+            "pagina_vendas",
+            "robots_txt",
+            "accounts:login",
+        ]
+
+    def location(self, item):
+        return reverse(item)

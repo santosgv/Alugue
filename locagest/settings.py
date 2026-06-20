@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_tenants',
+    'django.contrib.sitemaps',
     # Projeto
     'accounts',   # shared (perfis de usuário)
     'core',       # shared (planos, assinaturas, empresas)

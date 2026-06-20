@@ -10,23 +10,27 @@ from django_tenants.models import TenantMixin,DomainMixin
 # ─────────────────────────────────────────────────────────────
 
 class SubscriptionPlan(models.Model):
+    PLANO_FREE     = 'free'
     PLANO_BASICO   = 'basico'
     PLANO_PRO      = 'pro'
     PLANO_PREMIUM  = 'premium'
 
     PLANO_CHOICES = [
+        (PLANO_FREE,    'Grátis'),
         (PLANO_BASICO,  'Básico'),
         (PLANO_PRO,     'Pro'),
         (PLANO_PREMIUM, 'Premium'),
     ]
 
     ICONE_MAP = {
+        PLANO_FREE:    'bi bi-rocket-takeoff',
         PLANO_BASICO:  'bi-box',
         PLANO_PRO:     'bi-lightning-charge-fill',
         PLANO_PREMIUM: 'bi-gem',
     }
 
     COR_MAP = {
+        PLANO_FREE:    "#050505",
         PLANO_BASICO:  '#64748b',
         PLANO_PRO:     '#3b82f6',
         PLANO_PREMIUM: '#8b5cf6',
