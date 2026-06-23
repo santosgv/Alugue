@@ -3,10 +3,6 @@ from django.utils.html import format_html
 from .models import SubscriptionPlan, TenantCompany, Assinatura, UsoAssinatura,StripeEvent
 
 
-
-
-
-
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
     list_display  = ('nome', 'slug', 'preco_mensal', 'preco_anual',
@@ -134,4 +130,5 @@ class TenantAdmin(PublicTenantOnlyMixin,TenantAdminMixin, admin.ModelAdmin):
     list_filter   = ('ativo', 'plano')
     search_fields = ('nome', 'cnpj')
     inlines = [DomainInline]
+
 admin.site.register(StripeEvent)
