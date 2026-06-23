@@ -87,7 +87,6 @@ SECRET_KEY = config(
 DEBUG = config('DEBUG')
 
 # settings.py - Configuração para produção
-print(DEBUG)
 if not DEBUG:
     LOGGING = {
         'version': 1,
