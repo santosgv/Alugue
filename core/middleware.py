@@ -28,11 +28,11 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils.deprecation import MiddlewareMixin
 from django.utils import timezone
-
+import logging
 from .models import TenantCompany
 from .services import AssinaturaService
 
-
+logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────
 # Rotas que sempre passam, independente do status da assinatura.
 # Use prefixos — qualquer path que COMECE com esses valores é liberado.
@@ -48,8 +48,13 @@ ROTAS_LIBERADAS = (
     '/plataforma/',
     '/static/',
     '/media/',
+    '/webhooks/stripe/',
 )
 
+GRACE_PERIOD_DIAS = 1
+
+# Status que permitem acesso ao sistema
+STATUS_LIBERADOS = {'ativa', 'trial'}
 
 class PlanoMiddleware(MiddlewareMixin):
 
@@ -152,20 +157,41 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
                 'Sua assinatura expirou. '
                 'Renove agora para continuar usando o sistema.'
             )
-
-        # Trial ou ativa — verifica se a data_fim já passou
-        if assinatura.data_fim and hoje > assinatura.data_fim:
-            if assinatura.status == 'trial':
-                return True, (
-                    f'Seu período de trial encerrou em '
-                    f'{assinatura.data_fim.strftime("%d/%m/%Y")}. '
-                    f'Escolha um plano para continuar.'
-                )
+        
+        if assinatura.status == 'pendente_pagamento':
             return True, (
-                f'Sua assinatura venceu em '
-                f'{assinatura.data_fim.strftime("%d/%m/%Y")} e não foi renovada. '
-                f'Renove para continuar usando o sistema.'
+                'Há um problema com seu pagamento. '
+                'Acesse o portal de pagamento para atualizar seu cartão '
+                'e reativar o acesso.'
+            )
+        
+        # ── Status liberados (ativa / trial) ────────────────────
+        if assinatura.status in STATUS_LIBERADOS:
+
+            # Sem data_fim: Stripe gerencia o fim — libera
+            # (assinatura recém-criada ainda sem current_period_end)
+            if not assinatura.data_fim:
+                return False, ''
+
+            # Dentro do período válido → libera
+            if hoje <= assinatura.data_fim:
+                return False, ''
+
+            # Passou da data_fim mas dentro do grace period
+            # Protege contra atrasos de webhook na renovação automática
+            dias_apos_vencimento = (hoje - assinatura.data_fim).days
+            if dias_apos_vencimento <= GRACE_PERIOD_DIAS:
+                logger.warning(
+                    f"Assinatura {assinatura.pk} com data_fim={assinatura.data_fim} "
+                    f"({dias_apos_vencimento}d atrás) — dentro do grace period, liberando."
+                )
+                return False, ''
+            return True, (
+                f'Sua assinatura venceu em {assinatura.data_fim.strftime("%d/%m/%Y")} '
+                f'e a renovação ainda não foi confirmada. '
+                f'Se você acabou de renovar, aguarde alguns minutos e tente novamente. '
+                f'Se o problema persistir, acesse o portal de pagamento.'
             )
 
-        # Passa — assinatura válida
-        return False, ''
+        # Status desconhecido → bloqueia por segurança
+        return True, 'Status de assinatura não reconhecido. Entre em contato com o suporte.'

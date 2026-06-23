@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import SubscriptionPlan, TenantCompany, Assinatura, UsoAssinatura
+from .models import SubscriptionPlan, TenantCompany, Assinatura, UsoAssinatura,StripeEvent
+
 
 
 
@@ -87,3 +88,5 @@ class UsoAssinaturaAdmin(admin.ModelAdmin):
     list_filter   = ('empresa',)
     date_hierarchy = 'data'
     readonly_fields = ('criado_em',)
+
+admin.site.register(StripeEvent)
