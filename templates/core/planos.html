@@ -77,6 +77,11 @@
   --bs-tooltip-bg: #3b82f6;
   --bs-tooltip-color: #ffffff;
 }
+
+a.disabled {
+  pointer-events: none;
+  cursor: default;
+}
 </style>
 {% endblock %}
 
@@ -220,19 +225,52 @@
         {% endwith %}
         {% endfor %}
       </ul>
-        <form method="post" action="{% url 'mudar_plano' %}">
-            {% csrf_token %}
-            <input type="hidden" name="plano" value="{{ plano.pk }}" />
-            <input type="hidden" name="ciclo" value="mensal" class="ciclo-input" />
-            <button type="submit" disabled
-              class="btn w-100 fw-semibold {% if plano.destaque %}btn-primary{% else %}btn-outline-primary{% endif %}"
-              onclick="this.form.ciclo.value = document.querySelector('.ciclo-btn.active').dataset.ciclo;"
-              {% if plano.preco_mensal > 0 %}
-                onclick="if(!confirm('Confirmar mudança para o plano {{ plano.nome }}?'))return false; this.form.ciclo.value = document.querySelector('.ciclo-btn.active').dataset.ciclo;"
-              {% endif %}>
-              Nos envie uma Mensagem para Mudar {{ plano.nome }}
-            </button>
-          </form>
+
+      <!-- CTA — lógica por estado do plano -->
+      {% if plano_atual and plano_atual.slug == plano.slug %}
+      {# ── Plano já ativo: apenas informa, sem ação ── #}
+      <button class="btn w-100 fw-semibold" disabled
+              style="background:#f0fdf4;color:#16a34a;border:2px solid #22c55e;">
+        <i class="bi bi-check-circle-fill me-2"></i>Plano Atual
+      </button>
+
+      {% elif plano.eh_gratuito %}
+      {# ── Plano free: ativa direto, sem Stripe ── #}
+      <form method="post" action="{% url 'mudar_plano' %}">
+        {% csrf_token %}
+        <input type="hidden" name="plano" value="{{ plano.pk }}" />
+        <input type="hidden" name="ciclo" value="mensal" />
+        <button type="submit" class="btn btn-outline-secondary w-100 fw-semibold">
+          <i class="bi bi-rocket-takeoff me-2"></i>Usar Grátis
+        </button>
+      </form>
+
+      {% else %}
+      {# ── Plano pago: botões Stripe por ciclo ── #}
+      <div class="d-grid gap-2">
+        <a href="{% url 'stripe_checkout' plano_id=plano.id ciclo='mensal' %}"
+           class="btn fw-semibold {% if plano.destaque %}btn-primary{% else %}btn-outline-primary{% endif %}">
+          <i class="bi bi-credit-card me-2"></i>
+          Assinar por R$ {{ plano.preco_mensal }}/mês
+        </a>
+
+        {% if plano.preco_anual > 0 %}
+        <a href="{% url 'stripe_checkout' plano_id=plano.id ciclo='anual' %}"
+           class="btn btn-outline-success fw-semibold position-relative">
+          <i class="bi bi-calendar-check me-2"></i>
+          Assinar por R$ {{ plano.preco_anual }}/ano
+          {% if plano.desconto_anual_pct > 0 %}
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success"
+                style="font-size:.6rem;">
+            -{{ plano.desconto_anual_pct }}%
+          </span>
+          {% endif %}
+        </a>
+        {% endif %}
+      </div>
+
+      {% endif %}
+
     </div>
   </div>
   {% endwith %}

@@ -59,6 +59,12 @@ class SubscriptionPlan(models.Model):
     ordem             = models.PositiveSmallIntegerField(default=0, help_text="Ordem de exibição")
     criado_em         = models.DateTimeField(auto_now_add=True)
 
+    # ── Stripe: IDs criados no dashboard ou via sync_stripe_plans ──
+    stripe_product_id      = models.CharField(max_length=100, blank=True)
+    stripe_price_id_mensal = models.CharField(max_length=100, blank=True)
+    stripe_price_id_anual  = models.CharField(max_length=100, blank=True)
+ 
+
     class Meta:
         verbose_name        = 'Plano de Assinatura'
         verbose_name_plural = 'Planos de Assinatura'
@@ -104,6 +110,16 @@ class SubscriptionPlan(models.Model):
     @property
     def usuarios_ilimitados(self):
         return self.limite_usuarios == 0
+    
+    @property
+    def eh_gratuito(self) -> bool:
+        """Plano free não passa pelo Stripe — ativação é direta, sem checkout."""
+        return self.preco_mensal == 0 and self.preco_anual == 0
+    
+ 
+    def stripe_price_id(self, ciclo: str) -> str:
+        """Retorna o price_id da Stripe correspondente ao ciclo."""
+        return self.stripe_price_id_anual if ciclo == 'anual' else self.stripe_price_id_mensal
 
     # ── helpers de recursos ────────────────────────────────────
     def tem_recurso(self, chave: str) -> bool:
@@ -199,6 +215,9 @@ class TenantCompany(TenantMixin, models.Model):
     data_cadastro  = models.DateTimeField(auto_now_add=True)
     data_expiracao = models.DateField(null=True, blank=True)
 
+    # ── Stripe: customer vinculado a esta empresa ───────────────
+    stripe_customer_id = models.CharField(max_length=100, blank=True, db_index=True)
+
     class Meta:
         verbose_name        = 'Empresa'
         verbose_name_plural = 'Empresas'
@@ -244,6 +263,7 @@ class Assinatura(models.Model):
     STATUS_SUSPENSA  = 'suspensa'
     STATUS_CANCELADA = 'cancelada'
     STATUS_EXPIRADA  = 'expirada'
+    STATUS_PENDENTE_PAGAMENTO = 'pendente_pagamento'
 
     STATUS_CHOICES = [
         (STATUS_TRIAL,     'Trial'),
@@ -251,6 +271,7 @@ class Assinatura(models.Model):
         (STATUS_SUSPENSA,  'Suspensa'),
         (STATUS_CANCELADA, 'Cancelada'),
         (STATUS_EXPIRADA,  'Expirada'),
+        (STATUS_PENDENTE_PAGAMENTO, 'Pagamento Pendente'),
     ]
 
     CICLO_MENSAL = 'mensal'
@@ -278,6 +299,14 @@ class Assinatura(models.Model):
     criado_por     = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True
     )
+    criado_em      = models.DateTimeField(auto_now_add=True)
+    atualizado_em  = models.DateTimeField(auto_now=True)
+
+    # ── Stripe: vínculos da assinatura ───────────────────────────
+    stripe_subscription_id     = models.CharField(max_length=100, blank=True, db_index=True)
+    stripe_checkout_session_id = models.CharField(max_length=100, blank=True)
+ 
+    criado_por     = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     criado_em      = models.DateTimeField(auto_now_add=True)
     atualizado_em  = models.DateTimeField(auto_now=True)
 
@@ -329,3 +358,21 @@ class UsoAssinatura(models.Model):
 
     def __str__(self):
         return f"{self.empresa} — {self.data}"
+
+
+
+class StripeEvent(models.Model):
+    """
+    Log de eventos recebidos do webhook da Stripe.
+    Garante idempotência (não processa o mesmo evento duas vezes)
+    e serve de auditoria/debug.
+    """
+    stripe_event_id = models.CharField(max_length=120, unique=True)
+    tipo            = models.CharField(max_length=80)
+    payload         = models.JSONField()
+    processado      = models.BooleanField(default=False)
+    erro            = models.TextField(blank=True)
+    recebido_em     = models.DateTimeField(auto_now_add=True)
+ 
+    class Meta:
+        ordering = ['-recebido_em']

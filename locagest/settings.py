@@ -76,6 +76,7 @@ from pathlib import Path
 import os
 from decouple import config
 from django.contrib.messages import constants
+import logging
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -84,6 +85,75 @@ SECRET_KEY = config(
 )
 
 DEBUG = config('DEBUG')
+
+# settings.py - Configuração para produção
+print(DEBUG)
+if not DEBUG:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'json': {
+                'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+                'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+            },
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join('/home/Alugese/log/django.log'),
+                'maxBytes': 1024 * 1024 * 100,  # 100 MB
+                'backupCount': 30,
+                'formatter': 'verbose',
+                'level': 'INFO',
+            },
+            'error_file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join('/home/Alugese/log/errors.log'),
+                'maxBytes': 1024 * 1024 * 100,
+                'backupCount': 30,
+                'formatter': 'verbose',
+                'level': 'ERROR',
+            },
+            'stripe_file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join('/home/Alugese/log/stripe.log'),
+                'maxBytes': 1024 * 1024 * 100,
+                'backupCount': 30,
+                'formatter': 'verbose',
+                'level': 'INFO',
+            },
+            'webhook_file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join('/home/Alugese/log/webhook.log'),
+                'maxBytes': 1024 * 1024 * 100,
+                'backupCount': 30,
+                'formatter': 'verbose',
+                'level': 'INFO',
+            },
+        },
+        'loggers': {
+            'core.stripe_service': {
+                'handlers': ['stripe_file', 'error_file'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'core.stripe_views': {
+                'handlers': ['stripe_file', 'error_file'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'core.webhook': {
+                'handlers': ['webhook_file', 'error_file'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+        },
+    }
 
 ALLOWED_HOSTS = ['*']
 

@@ -1,5 +1,9 @@
 from django.urls import path
 from . import views, admin_views
+from .stripe_views import (
+        IniciarCheckoutView, CheckoutSucessoView,
+        BillingPortalView, StripeWebhookView,
+    )
 
 
 urlpatterns = [
@@ -41,4 +45,14 @@ urlpatterns = [
 
     path('plataforma/usuarios/<int:pk>/toggle/',
          admin_views.ToggleUsuarioView.as_view(),        name='admin_toggle_usuario'),
+
+
+     path('assinatura/checkout/<int:plano_id>/<str:ciclo>/',
+             IniciarCheckoutView.as_view(), name='stripe_checkout'),
+     path('assinatura/sucesso/',
+             CheckoutSucessoView.as_view(), name='stripe_sucesso'),
+     path('assinatura/portal/',
+             BillingPortalView.as_view(), name='stripe_portal'),
+     path('webhooks/stripe/',
+             StripeWebhookView.as_view(), name='stripe_webhook'),
 ]

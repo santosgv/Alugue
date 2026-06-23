@@ -27,11 +27,11 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils.deprecation import MiddlewareMixin
 from django.utils import timezone
-
+import logging
 from .models import TenantCompany
 from .services import AssinaturaService
 
-
+logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────
 # Rotas sempre liberadas pelo guard de assinatura
 # ─────────────────────────────────────────────────────────────
@@ -46,12 +46,9 @@ ROTAS_LIBERADAS = (
     '/plataforma/',
     '/static/',
     '/media/',
+    '/webhooks/stripe/',
 )
 
-
-# ─────────────────────────────────────────────────────────────
-# PLANO MIDDLEWARE
-# ─────────────────────────────────────────────────────────────
 
 class PlanoMiddleware(MiddlewareMixin):
 
@@ -178,6 +175,7 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
                 'Renove agora para continuar usando o sistema.'
             )
 
+        # Trial ou ativa — verifica se a data_fim já passou
         if assinatura.data_fim and hoje > assinatura.data_fim:
             if assinatura.status == 'trial':
                 return True, (
@@ -186,9 +184,11 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
                     f'Escolha um plano para continuar.'
                 )
             return True, (
-                f'Sua assinatura venceu em '
-                f'{assinatura.data_fim.strftime("%d/%m/%Y")} e não foi renovada. '
-                f'Renove para continuar usando o sistema.'
+                f'Sua assinatura venceu em {assinatura.data_fim.strftime("%d/%m/%Y")} '
+                f'e a renovação ainda não foi confirmada. '
+                f'Se você acabou de renovar, aguarde alguns minutos e tente novamente. '
+                f'Se o problema persistir, acesse o portal de pagamento.'
             )
 
+        # Passa — assinatura válida
         return False, ''
