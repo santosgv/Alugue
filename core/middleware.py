@@ -15,6 +15,7 @@ Preparação para django-tenants:
 ── AssinaturaGuardMiddleware ──────────────────────────────────
 Bloqueia o acesso a todas as rotas operacionais quando a
 assinatura está expirada, cancelada, suspensa ou inexistente.
+Também bloqueia rotas de recursos não disponíveis no plano ativo.
 
 Comportamento:
   - Superuser → sempre passa (administrador da plataforma).
@@ -23,7 +24,10 @@ Comportamento:
     para /planos/ com mensagem explicativa.
   - Rotas da lista ROTAS_LIBERADAS → sempre passam (login,
     logout, planos, assinatura, admin, static, media).
+  - Rotas de recursos sem permissão no plano → redireciona
+    para /planos/ com mensagem de upgrade.
 """
+
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils.deprecation import MiddlewareMixin
@@ -33,6 +37,7 @@ from .models import TenantCompany
 from .services import AssinaturaService
 
 logger = logging.getLogger(__name__)
+
 # ─────────────────────────────────────────────────────────────
 # Rotas que sempre passam, independente do status da assinatura.
 # Use prefixos — qualquer path que COMECE com esses valores é liberado.
@@ -55,6 +60,28 @@ GRACE_PERIOD_DIAS = 1
 
 # Status que permitem acesso ao sistema
 STATUS_LIBERADOS = {'ativa', 'trial'}
+
+# ─────────────────────────────────────────────────────────────
+# Mapeamento de rotas → recurso exigido no plano.
+# Chave: prefixo da URL.
+# Valor: chave do campo JSON `recursos` em SubscriptionPlan.
+#
+# Para adicionar um novo recurso no futuro, basta incluir uma
+# entrada aqui. Não é necessário mexer em nenhum outro lugar.
+# ─────────────────────────────────────────────────────────────
+RECURSOS_POR_ROTA = {
+    '/relatorios/': 'relatorios',
+    # '/api/':       'api_acesso',      # descomente quando lançar
+    # '/whatsapp/':  'whatsapp',        # descomente quando lançar
+}
+
+NOMES_RECURSO = {
+    'relatorios':          'Relatórios Avançados',
+    'api_acesso':          'Acesso à API',
+    'whatsapp':            'Alertas WhatsApp',
+    'suporte_prioritario': 'Suporte Prioritário',
+}
+
 
 class PlanoMiddleware(MiddlewareMixin):
 
@@ -113,17 +140,23 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
         if any(path.startswith(rota) for rota in ROTAS_LIBERADAS):
             return
 
-        # Verifica o status da assinatura
+        # ── 1. Verifica assinatura ─────────────────────────────
         assinatura = getattr(request, 'assinatura', None)
         bloqueado, motivo = self._avaliar(assinatura)
 
         if bloqueado:
-            # Evita loop: se já está em /planos/ não adiciona msg de novo
-            #messages.warning(request, motivo)
-            print(motivo)
+            messages.warning(request, motivo)
             return redirect('/planos/')
 
-    # ── lógica de avaliação (separada para facilitar testes) ──
+        # ── 2. Verifica recurso do plano ───────────────────────
+        # Só chega aqui se a assinatura está válida.
+        # Bloqueia rotas de recursos não disponíveis no plano ativo.
+        recurso_bloqueado, msg_recurso = self._avaliar_recurso(request)
+        if recurso_bloqueado:
+            messages.warning(request, msg_recurso)
+            return redirect('/planos/')
+
+    # ── Avaliação de assinatura ────────────────────────────────
 
     @staticmethod
     def _avaliar(assinatura) -> tuple[bool, str]:
@@ -157,19 +190,18 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
                 'Sua assinatura expirou. '
                 'Renove agora para continuar usando o sistema.'
             )
-        
+
         if assinatura.status == 'pendente_pagamento':
             return True, (
                 'Há um problema com seu pagamento. '
                 'Acesse o portal de pagamento para atualizar seu cartão '
                 'e reativar o acesso.'
             )
-        
+
         # ── Status liberados (ativa / trial) ────────────────────
         if assinatura.status in STATUS_LIBERADOS:
 
-            # Sem data_fim: Stripe gerencia o fim — libera
-            # (assinatura recém-criada ainda sem current_period_end)
+            # Sem data_fim: Stripe gerencia — libera
             if not assinatura.data_fim:
                 return False, ''
 
@@ -178,7 +210,6 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
                 return False, ''
 
             # Passou da data_fim mas dentro do grace period
-            # Protege contra atrasos de webhook na renovação automática
             dias_apos_vencimento = (hoje - assinatura.data_fim).days
             if dias_apos_vencimento <= GRACE_PERIOD_DIAS:
                 logger.warning(
@@ -186,6 +217,7 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
                     f"({dias_apos_vencimento}d atrás) — dentro do grace period, liberando."
                 )
                 return False, ''
+
             return True, (
                 f'Sua assinatura venceu em {assinatura.data_fim.strftime("%d/%m/%Y")} '
                 f'e a renovação ainda não foi confirmada. '
@@ -195,3 +227,35 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
 
         # Status desconhecido → bloqueia por segurança
         return True, 'Status de assinatura não reconhecido. Entre em contato com o suporte.'
+
+    # ── Avaliação de recurso por rota ──────────────────────────
+
+    @staticmethod
+    def _avaliar_recurso(request) -> tuple[bool, str]:
+        """
+        Verifica se o plano ativo tem o recurso exigido pela rota acessada.
+        Retorna (bloqueado: bool, mensagem: str).
+        """
+        path  = request.path
+        plano = getattr(request, 'plano_ativo', None)
+
+        # Sem plano resolvido → deixa passar (PlanoMiddleware não encontrou)
+        if plano is None:
+            return False, ''
+
+        for prefixo, chave_recurso in RECURSOS_POR_ROTA.items():
+            if not path.startswith(prefixo):
+                continue
+
+            if not plano.tem_recurso(chave_recurso):
+                nome = NOMES_RECURSO.get(chave_recurso, chave_recurso)
+                logger.info(
+                    f"Recurso '{chave_recurso}' bloqueado — "
+                    f"plano={plano.slug} path={path}"
+                )
+                return True, (
+                    f'O recurso "{nome}" não está disponível no plano {plano.nome}. '
+                    f'Faça upgrade para acessar.'
+                )
+
+        return False, ''

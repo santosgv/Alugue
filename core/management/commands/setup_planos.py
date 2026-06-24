@@ -125,26 +125,26 @@ class Command(BaseCommand):
                 self.stdout.write(f'  → Plano atualizado: {obj.nome}')
 
         # Cria empresa demo + trial se não existir
-        empresa_qs = TenantCompany.objects.filter(nome='LocaGest')
-        if not empresa_qs.exists() or force:
-            plano_pro = SubscriptionPlan.objects.get(slug='basico')
-            empresa, _ = TenantCompany.objects.update_or_create(
-                nome='Empresa Trial',
-                defaults={'ativo': True, 'plano': plano_pro},
-            )
+       # empresa_qs = TenantCompany.objects.filter(nome='LocaGest')
+       #if not empresa_qs.exists() or force:
+       #     plano_pro = SubscriptionPlan.objects.get(slug='basico')
+       #     empresa, _ = TenantCompany.objects.update_or_create(
+       #         nome='Empresa Trial',
+       #         defaults={'ativo': True, 'plano': plano_pro},
+       #     )
 
             # Cria trial de 14 dias
-            sub_existente = empresa.assinaturas.filter(
-                status__in=['trial', 'ativa']
-            ).first()
-            if not sub_existente or force:
-                AssinaturaService.criar_trial(empresa, plano_pro)
-                self.stdout.write(self.style.SUCCESS(
-                    f'  ✔ Empresa "{empresa.nome}" criada com trial de 14 dias (plano Básico).'
-                ))
-            else:
-                self.stdout.write(f'  → Empresa "{empresa.nome}" já possui assinatura ativa.')
-        else:
-            self.stdout.write(f'  → Empresa demo já existe.')
+        #    sub_existente = empresa.assinaturas.filter(
+        #        status__in=['trial', 'ativa']
+         #   ).first()
+         #   if not sub_existente or force:
+         #       AssinaturaService.criar_trial(empresa, plano_pro)
+         #       self.stdout.write(self.style.SUCCESS(
+         #           f'  ✔ Empresa "{empresa.nome}" criada com trial de 14 dias (plano Básico).'
+         #       ))
+         #   else:
+         #       self.stdout.write(f'  → Empresa "{empresa.nome}" já possui assinatura ativa.')
+        #else:
+        #    self.stdout.write(f'  → Empresa demo já existe.')
 
         self.stdout.write(self.style.SUCCESS('\n✔ Setup concluído!\n'))

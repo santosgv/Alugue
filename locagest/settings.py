@@ -76,6 +76,7 @@ from pathlib import Path
 import os
 from decouple import config
 import logging
+from django.contrib.messages import constants
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -189,10 +190,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'core.middleware.PlanoMiddleware',    # → substituir por TenantMainMiddleware
-    'core.middleware.AssinaturaGuardMiddleware', # bloqueia acesso com assinatura inativa
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.PlanoMiddleware',    # → substituir por TenantMainMiddleware
+    'core.middleware.AssinaturaGuardMiddleware', # bloqueia acesso com assinatura inativa
 ]
 
 ROOT_URLCONF = 'locagest.urls'
@@ -280,3 +281,11 @@ EMAIL_PORT =587
 EMAIL_HOST='smtp.office365.com'
 
 SITE_ID = 1
+
+MESSAGE_TAGS = {
+    constants.DEBUG: 'alert-primary',
+    constants.ERROR: 'alert-danger',
+    constants.SUCCESS: 'alert-success',
+    constants.INFO: 'alert-info',
+    constants.WARNING: 'alert-warning',
+}
