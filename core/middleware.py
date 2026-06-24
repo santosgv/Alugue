@@ -61,6 +61,10 @@ ROTAS_LIBERADAS = (
     '/webhooks/stripe/',
 )
 
+GRACE_PERIOD_DIAS = 1
+
+# Status que permitem acesso ao sistema
+STATUS_LIBERADOS = {'ativa', 'trial'}
 
 # ─────────────────────────────────────────────────────────────
 # Mapeamento de rotas → recurso exigido no plano.
