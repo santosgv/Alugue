@@ -77,6 +77,7 @@ import os
 from decouple import config
 from django.contrib.messages import constants
 import logging
+from django.contrib.messages import constants
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -219,17 +220,16 @@ INSTALLED_APPS = list(SHARED_APPS) + [a for a in TENANT_APPS if a not in SHARED_
     # Com django-tenants: TenantMainMiddleware DEVE ser o primeiro
     # Ele resolve o schema pelo subdomínio antes de qualquer outra coisa
 MIDDLEWARE = [
-        'django_tenants.middleware.main.TenantMainMiddleware',
-        'django.middleware.security.SecurityMiddleware',
-        'django.contrib.sessions.middleware.SessionMiddleware',
-        'django.middleware.common.CommonMiddleware',
-        'django.middleware.csrf.CsrfViewMiddleware',
-        'django.contrib.auth.middleware.AuthenticationMiddleware',
-        'core.middleware.PlanoMiddleware', 
-        'core.middleware.AssinaturaGuardMiddleware',
-        'django.contrib.messages.middleware.MessageMiddleware',
-        'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    ]
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.PlanoMiddleware',    # → substituir por TenantMainMiddleware
+    'core.middleware.AssinaturaGuardMiddleware', # bloqueia acesso com assinatura inativa
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
 
 ROOT_URLCONF = 'locagest.urls'
 
@@ -322,3 +322,11 @@ EMAIL_PORT =587
 EMAIL_HOST='smtp.office365.com'
 
 SITE_ID = 1
+
+MESSAGE_TAGS = {
+    constants.DEBUG: 'alert-primary',
+    constants.ERROR: 'alert-danger',
+    constants.SUCCESS: 'alert-success',
+    constants.INFO: 'alert-info',
+    constants.WARNING: 'alert-warning',
+}

@@ -1,0 +1,21 @@
+# 1. Verificar os preços atuais
+python manage.py sync_stripe_plans --check
+
+# 2. Sincronizar sem forçar (reutiliza existentes)
+python manage.py sync_stripe_plans
+
+# 3. Forçar recriação de todos os planos
+python manage.py sync_stripe_plans --force
+
+# 4. Forçar recriação de um plano específico
+python manage.py sync_stripe_plans --plano pro --force
+
+# 5. Verificar planos específicos
+python manage.py check_stripe_prices
+
+
+# Corrigir um plano específico
+python manage.py fix_plan --slug pro
+
+# Corrigir todos os planos
+python manage.py fix_plan --all

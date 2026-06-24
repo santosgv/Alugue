@@ -398,11 +398,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <a href="{% url 'dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2-fill"></i> Dashboard
     </a>
-    {% if user_is_readonly or user_is_admin %}
-        <a href="{% url 'relatorios:index' %}" class="sidebar-link {% if request.resolver_match.namespace == 'relatorios' and request.resolver_match.url_name == 'index' %}active{% endif %}">
-      <i class="bi bi-bar-chart-fill"></i> Relatorios
-    </a>
-    {% endif %}
+      {% if plano_tem_relatorios or user.is_superuser %}
+        <a href="{% url 'relatorios:index' %}" class="sidebar-link">
+          <i class="bi bi-bar-chart-fill"></i> Relatórios
+        </a>
+      {% else %}
+        <a href="/planos/" class="sidebar-link text-muted">
+          <i class="bi bi-bar-chart-fill"></i> Relatórios
+          <span class="badge bg-warning ms-auto" style="font-size:.6rem;">Upgrade</span>
+        </a>
+      {% endif %}
   </div>
 
   <div class="sidebar-section">

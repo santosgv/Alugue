@@ -237,50 +237,165 @@ class StripeService:
         else:
             stripe.Subscription.delete(assinatura.stripe_subscription_id)
 
+    # stripe_service.py - Versão corrigida
+
     @staticmethod
     def sincronizar_plano(plano: SubscriptionPlan) -> SubscriptionPlan:
         """
-        Cria/garante Product e Prices na Stripe para o plano local.
-        Idempotente. Planos gratuitos são ignorados.
+        Cria (ou reutiliza) o Product e os 2 Price (mensal/anual) na Stripe.
+        É IDEMPOTENTE - não cria duplicados.
         """
         if plano.eh_gratuito:
+            logger.info(f"Plano '{plano.nome}' é gratuito — ignorado na sincronização Stripe.")
             return plano
 
-        if not plano.stripe_product_id:
+        # ── Product ──
+        product = None
+        if plano.stripe_product_id:
+            try:
+                product = stripe.Product.retrieve(plano.stripe_product_id)
+                logger.info(f"Produto existente encontrado: {product.id}")
+            except stripe.error.InvalidRequestError:
+                # Produto não existe mais, vamos criar um novo
+                logger.warning(f"Produto {plano.stripe_product_id} não encontrado, criando novo.")
+                print("não encontrado, criando novo.")
+                plano.stripe_product_id = None
+                plano.save(update_fields=['stripe_product_id'])
+
+        if not product:
+            # Criar novo produto
             product = stripe.Product.create(
-                name=f"LocaGest — {plano.nome}",
+                name=f"AlugeSe — {plano.nome}",
                 description=plano.descricao or f"Plano {plano.nome}",
                 metadata={'subscription_plan_id': str(plano.pk), 'slug': plano.slug},
             )
             plano.stripe_product_id = product.id
-        else:
-            product = stripe.Product.retrieve(plano.stripe_product_id)
+            logger.info(f"Novo produto criado: {product.id}")
 
-        if not plano.stripe_price_id_mensal and plano.preco_mensal > 0:
-            p = stripe.Price.create(
-                product=product.id,
-                currency='brl',
-                unit_amount=int(plano.preco_mensal * 100),
-                recurring={'interval': 'month'},
-                metadata={'subscription_plan_id': str(plano.pk), 'ciclo': 'mensal'},
+        # ── Price mensal ──
+        price_mensal = None
+        if plano.stripe_price_id_mensal:
+            try:
+                price_mensal = stripe.Price.retrieve(plano.stripe_price_id_mensal)
+                # Verificar se o preço ainda está ativo
+                if price_mensal.active:
+                    logger.info(f"Preço mensal existente encontrado: {price_mensal.id}")
+                else:
+                    # Preço desativado, criar um novo
+                    logger.warning(f"Preço mensal {price_mensal.id} está inativo, criando novo.")
+                    price_mensal = None
+                    plano.stripe_price_id_mensal = None
+                    plano.save(update_fields=['stripe_price_id_mensal'])
+            except stripe.error.InvalidRequestError:
+                # Preço não existe
+                logger.warning(f"Preço mensal {plano.stripe_price_id_mensal} não encontrado.")
+                plano.stripe_price_id_mensal = None
+                plano.save(update_fields=['stripe_price_id_mensal'])
+
+        if not price_mensal and plano.preco_mensal > 0:
+            # Buscar preço existente pelo produto e valor
+            existing_prices = stripe.Price.list(
+                product=plano.stripe_product_id,
+                active=True,
+                limit=10
             )
-            plano.stripe_price_id_mensal = p.id
+            for p in existing_prices.data:
+                if (p.unit_amount == int(plano.preco_mensal * 100) and 
+                    p.recurring and p.recurring.interval == 'month'):
+                    price_mensal = p
+                    logger.info(f"Preço mensal encontrado por busca: {p.id}")
+                    break
+            
+            if not price_mensal:
+                # Criar novo preço mensal
+                price_mensal = stripe.Price.create(
+                    product=plano.stripe_product_id,
+                    currency='brl',
+                    unit_amount=int(plano.preco_mensal * 100),
+                    recurring={'interval': 'month'},
+                    metadata={'subscription_plan_id': str(plano.pk), 'ciclo': 'mensal'},
+                )
+                logger.info(f"Novo preço mensal criado: {price_mensal.id}")
+            
+            plano.stripe_price_id_mensal = price_mensal.id
 
-        if not plano.stripe_price_id_anual and plano.preco_anual > 0:
-            p = stripe.Price.create(
-                product=product.id,
-                currency='brl',
-                unit_amount=int(plano.preco_anual * 100),
-                recurring={'interval': 'year'},
-                metadata={'subscription_plan_id': str(plano.pk), 'ciclo': 'anual'},
+        # ── Price anual ──
+        price_anual = None
+        if plano.stripe_price_id_anual:
+            try:
+                price_anual = stripe.Price.retrieve(plano.stripe_price_id_anual)
+                if price_anual.active:
+                    logger.info(f"Preço anual existente encontrado: {price_anual.id}")
+                else:
+                    logger.warning(f"Preço anual {price_anual.id} está inativo, criando novo.")
+                    price_anual = None
+                    plano.stripe_price_id_anual = None
+                    plano.save(update_fields=['stripe_price_id_anual'])
+            except stripe.error.InvalidRequestError:
+                logger.warning(f"Preço anual {plano.stripe_price_id_anual} não encontrado.")
+                plano.stripe_price_id_anual = None
+                plano.save(update_fields=['stripe_price_id_anual'])
+
+        if not price_anual and plano.preco_anual > 0:
+            # Buscar preço existente pelo produto e valor
+            existing_prices = stripe.Price.list(
+                product=plano.stripe_product_id,
+                active=True,
+                limit=10
             )
-            plano.stripe_price_id_anual = p.id
+            for p in existing_prices.data:
+                if (p.unit_amount == int(plano.preco_anual * 100) and 
+                    p.recurring and p.recurring.interval == 'year'):
+                    price_anual = p
+                    logger.info(f"Preço anual encontrado por busca: {p.id}")
+                    break
+            
+            if not price_anual:
+                # Criar novo preço anual
+                price_anual = stripe.Price.create(
+                    product=plano.stripe_product_id,
+                    currency='brl',
+                    unit_amount=int(plano.preco_anual * 100),
+                    recurring={'interval': 'year'},
+                    metadata={'subscription_plan_id': str(plano.pk), 'ciclo': 'anual'},
+                )
+                logger.info(f"Novo preço anual criado: {price_anual.id}")
+            
+            plano.stripe_price_id_anual = price_anual.id
 
+        # Salvar alterações
         plano.save(update_fields=[
-            'stripe_product_id', 'stripe_price_id_mensal', 'stripe_price_id_anual',
+            'stripe_product_id', 
+            'stripe_price_id_mensal', 
+            'stripe_price_id_anual'
         ])
+        
         return plano
+    
 
+    # stripe_service.py - Adicionar método para forçar recriação
+
+    @staticmethod
+    def sincronizar_plano_forcado(plano: SubscriptionPlan) -> SubscriptionPlan:
+        """
+        Força a recriação de todos os produtos e preços no Stripe.
+        Útil quando há inconsistências.
+        """
+        if plano.eh_gratuito:
+            return plano
+        
+        # Limpar IDs existentes
+        plano.stripe_product_id = None
+        plano.stripe_price_id_mensal = None
+        plano.stripe_price_id_anual = None
+        plano.save(update_fields=[
+            'stripe_product_id', 
+            'stripe_price_id_mensal', 
+            'stripe_price_id_anual'
+        ])
+        
+        # Criar novamente
+        return StripeService.sincronizar_plano(plano)
 
 # ─────────────────────────────────────────────────────────────
 # WEBHOOK HANDLER
