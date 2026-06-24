@@ -220,16 +220,17 @@ INSTALLED_APPS = list(SHARED_APPS) + [a for a in TENANT_APPS if a not in SHARED_
     # Com django-tenants: TenantMainMiddleware DEVE ser o primeiro
     # Ele resolve o schema pelo subdomínio antes de qualquer outra coisa
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'core.middleware.PlanoMiddleware',    # → substituir por TenantMainMiddleware
-    'core.middleware.AssinaturaGuardMiddleware', # bloqueia acesso com assinatura inativa
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
+        'django_tenants.middleware.main.TenantMainMiddleware',
+        'django.middleware.security.SecurityMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.middleware.common.CommonMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        'core.middleware.PlanoMiddleware', 
+        'core.middleware.AssinaturaGuardMiddleware',
+    ]
 
 ROOT_URLCONF = 'locagest.urls'
 
