@@ -13,9 +13,49 @@ python manage.py sync_stripe_plans --plano pro --force
 # 5. Verificar planos específicos
 python manage.py check_stripe_prices
 
+# Entrar no shell do Django
+python manage.py shell
 
-# Corrigir um plano específico
-python manage.py fix_plan --slug pro
+
+# Cole este código no shell do Django
+
+from core.models import SubscriptionPlan
+from core.stripe_service import StripeService
+import stripe
+
+def fix_plan(slug):
+    """
+    Corrige um plano específico.
+    """
+    try:
+        plano = SubscriptionPlan.objects.get(slug=slug)
+        print(f"🔧 Corrigindo plano: {plano.nome}")
+        
+        # Limpar IDs
+        plano.stripe_product_id = None
+        plano.stripe_price_id_mensal = None
+        plano.stripe_price_id_anual = None
+        plano.save()
+        
+        # Sincronizar novamente
+        plano_atualizado = StripeService.sincronizar_plano(plano)
+        
+        print(f"✅ Plano corrigido:")
+        print(f"   product_id: {plano_atualizado.stripe_product_id}")
+        print(f"   price_mensal: {plano_atualizado.stripe_price_id_mensal}")
+        print(f"   price_anual: {plano_atualizado.stripe_price_id_anual}")
+        
+        return plano_atualizado
+        
+    except SubscriptionPlan.DoesNotExist:
+        print(f"❌ Plano com slug '{slug}' não encontrado")
+    except Exception as e:
+        print(f"❌ Erro: {str(e)}")
+
+# Executar para o plano 'pro'
+fix_plan('pro')
+
+# Dentro do shell, executar o código
 
 # Corrigir todos os planos
 python manage.py fix_plan --all

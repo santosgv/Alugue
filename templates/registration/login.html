@@ -1,4 +1,5 @@
 {% load static %}
+{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -37,6 +38,52 @@
     .input-icon i { position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#94a3b8; }
     .input-icon input { padding-left:38px; }
     .alert { border-radius:9px;border:none;font-size:.85rem; }
+
+
+     .google-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: #fff;
+            color: #757575;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .google-btn:hover {
+            background: #f5f5f5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .separator {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .separator::before, .separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+        .separator span {
+            padding: 0 10px;
+            color: #999;
+        }
   </style>
 </head>
 <body>
@@ -44,10 +91,12 @@
   <div class="login-logo"><i class="bi bi-box-seam-fill"></i></div>
   <div class="login-title">alugeSe</div>
   <div class="login-sub">Sistema de Gestão de Locações</div>
+  
 
   {% if form.errors %}
   <div class="alert alert-danger mb-3"><i class="bi bi-exclamation-circle me-2"></i>Usuário ou senha inválidos.</div>
   {% endif %}
+  
 
   <form method="post">
     {% csrf_token %}
@@ -77,6 +126,19 @@
     </button>
     <input type="hidden" name="next" value="{{ next }}" />
   </form>
+
+            <div class="separator">
+            <span>ou</span>
+        </div>
+        
+        <!-- Login com Google -->
+        <div style="text-align: center;">
+            <a href="{% provider_login_url 'google' process='login' %}" class="google-btn">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
+                Entrar com Google
+            </a>
+        </div>
+    
   <p class="text-center mt-4 mb-0" style="font-size:.75rem;color:#94a3b8;">alugeSe &copy; 2026 — Todos os direitos reservados    <a href="#" data-bs-toggle="modal" data-bs-target="#termosModal">
         Termos de Uso
     </a>

@@ -169,6 +169,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django.contrib.sitemaps',
+    # AllAuth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     # Projeto
     'accounts',   # shared (perfis de usuário)
     'core',       # shared (planos, assinaturas, empresas)
@@ -192,6 +197,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # AllAuth
+    'allauth.account.middleware.AccountMiddleware',
     'core.middleware.PlanoMiddleware',    # → substituir por TenantMainMiddleware
     'core.middleware.AssinaturaGuardMiddleware', # bloqueia acesso com assinatura inativa
 ]
@@ -253,6 +260,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LOGIN_URL             = '/accounts/login/'
+LOGOUT_URL            = '/accounts/logout'
 LOGIN_REDIRECT_URL    = '/'
 LOGOUT_REDIRECT_URL   = '/accounts/login/'
 
@@ -281,6 +289,44 @@ EMAIL_PORT =587
 EMAIL_HOST='smtp.office365.com'
 
 SITE_ID = 1
+
+
+# Configurações de Autenticação
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# AllAuth Settings
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 7
+ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
+ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# Google OAuth2
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id':config('GOOGLE_CLIENT_ID'),
+            'secret': config('GOOGLE_CLIENT_SECRET'),
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'VERIFIED_EMAIL': True,
+        'EMAIL_AUTHENTICATION': True,
+    }
+}
+
 
 MESSAGE_TAGS = {
     constants.DEBUG: 'alert-primary',
