@@ -18,6 +18,8 @@ urlpatterns = [
         name="django.contrib.sitemaps.views.sitemap",
     ),
     path('accounts/', include('accounts.urls')),
+    path('auth/', include('allauth.urls')),
+    path('auth/social/', include('allauth.socialaccount.urls')),
     path('clientes/', include('clientes.urls')),
     path('produtos/', include('produtos.urls')),
     path('locacoes/', include('locacoes.urls')),
