@@ -60,6 +60,12 @@
         <dt class="col-5 text-muted">Telefone</dt>  <dd class="col-7">{{ empresa.telefone|default:"—" }}</dd>
         <dt class="col-5 text-muted">Status</dt>
         <dd class="col-7"><span class="sb {% if empresa.ativo %}sb-ativa{% else %}sb-cancelada{% endif %}">{% if empresa.ativo %}Ativa{% else %}Inativa{% endif %}</span></dd>
+        <dt class="col-5 text-muted">URL</dt>
+        <dd class="col-7">
+            <a href="{{ empresa.url }}" target="_blank">
+                {{ empresa.url }}
+            </a>
+        </dd>
       </dl>
     </div>
 

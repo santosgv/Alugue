@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 import datetime
+
+from django.conf import settings
 from .recursos_config import RECURSOS_CONFIG, is_em_desenvolvimento
 from django_tenants.models import TenantMixin,DomainMixin
 
@@ -235,6 +237,20 @@ class TenantCompany(TenantMixin, models.Model):
     def plano_atual(self):
         sub = self.assinatura_ativa
         return sub.plano if sub else self.plano
+    
+    @property
+    def primary_domain(self):
+        return self.domains.filter(is_primary=True).first()
+
+    @property
+    def url(self):
+        domain = self.primary_domain
+
+        if not domain:
+            return ""
+
+        protocolo = "https" if not settings.DEBUG else "http"
+        return f"{protocolo}://{domain.domain}"
 
 
 class Domain(DomainMixin):
