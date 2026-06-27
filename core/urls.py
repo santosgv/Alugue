@@ -9,13 +9,11 @@ from .stripe_views import (
 urlpatterns = [
     # ── App do usuário final ───────────────────────────────────
     path('',                       views.DashboardView.as_view(),            name='dashboard'),
-    path('vendas/',                views.PaginaVendasView.as_view(),          name='pagina_vendas'),
     path('planos/',                views.PlanosView.as_view(),               name='planos'),
     path('assinatura/',            views.AssinaturaPainelView.as_view(),     name='assinatura_painel'),
     path('assinatura/mudar/',      views.MudarPlanoView.as_view(),           name='mudar_plano'),
     path('assinatura/cancelar/',   views.CancelarAssinaturaView.as_view(),   name='cancelar_assinatura'),
     path('configuracoes/',         views.EmpresaConfigView.as_view(),        name='empresa_config'),
-    path('robots.txt',             views.robots,                             name='robots_txt'),
 
     # ── Painel do dono da plataforma (superuser) ───────────────
     path('plataforma/',
@@ -53,6 +51,4 @@ urlpatterns = [
              CheckoutSucessoView.as_view(), name='stripe_sucesso'),
      path('assinatura/portal/',
              BillingPortalView.as_view(), name='stripe_portal'),
-     path('webhooks/stripe/',
-             StripeWebhookView.as_view(), name='stripe_webhook'),
 ]

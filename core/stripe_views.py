@@ -158,7 +158,7 @@ class StripeWebhookView(View):
         - invoice.payment_failed
         - invoice.payment_succeeded
     """
-
+    
     def post(self, request, *args, **kwargs):
         payload    = request.body
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
