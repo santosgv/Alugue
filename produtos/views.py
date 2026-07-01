@@ -1,6 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy
+from django.shortcuts import redirect
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.db.models import Q,ProtectedError
 from core.mixins import VerificarLimiteProdutoMixin,VerificarLimiteCategoriaMixin
@@ -106,7 +107,25 @@ class ProdutoDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('produtos:lista')
 
     def form_valid(self, form):
-        messages.success(self.request, 'Produto excluído com sucesso!')
+        produto = self.get_object()
+        itens_locacao = ItemLocacao.objects.filter(produto=produto)
+
+        # Verifica se tem itens de locação vinculados
+        tem_vinculos = itens_locacao.exists() 
+
+        if tem_vinculos:
+            # Não pode excluir — inativa em vez disso
+            produto.status = Produto.STATUS_INATIVO
+            produto.save(update_fields=['status'])
+            messages.warning(
+                self.request,
+                f'O produto "{produto.nome}" possui locações vinculadas e não pode ser excluído. '
+                f'Ele foi inativado automaticamente.'
+            )
+            return redirect(self.success_url)
+
+        # Sem vínculos — exclui normalmente
+        messages.success(self.request, f'Produto "{produto.nome}" excluído com sucesso.')
         return super().form_valid(form)
     
 
