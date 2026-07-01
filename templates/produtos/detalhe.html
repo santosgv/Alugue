@@ -32,7 +32,7 @@
         <dt class="col-6 text-muted">Total</dt><dd class="col-6 fw-semibold">{{ produto.quantidade_total }}</dd>
         <dt class="col-6 text-muted">Disponível</dt>
         <dd class="col-6 fw-semibold {% if produto.quantidade_disponivel == 0 %}text-danger{% else %}text-success{% endif %}">{{ produto.quantidade_disponivel }}</dd>
-        <dt class="col-6 text-muted">Locado</dt><dd class="col-6">{{ produto.quantidade_locada }}</dd>
+        <dt class="col-6 text-muted">Locado/Indisponivel</dt><dd class="col-6">{{ produto.quantidade_locada }}</dd>
         <dt class="col-6 text-muted">Valor/dia</dt><dd class="col-6 fw-semibold">R$ {{ produto.valor_diario|money }}</dd>
       </dl>
       <div class="mt-3">
