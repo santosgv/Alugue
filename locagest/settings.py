@@ -403,3 +403,6 @@ MESSAGE_TAGS = {
     constants.INFO: 'alert-info',
     constants.WARNING: 'alert-warning',
 }
+
+WHATSAPP_API_VERSION  = 'v20.0'
+WHATSAPP_VERIFY_TOKEN = config('WHATSAPP_VERIFY_TOKEN')

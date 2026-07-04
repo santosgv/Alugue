@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
 class Notificacao(models.Model):
     TIPO_INFO = 'info'
     TIPO_ALERTA = 'alerta'
@@ -51,3 +50,5 @@ class Notificacao(models.Model):
             self.lida = True
             self.data_leitura = timezone.now()
             self.save(update_fields=['lida', 'data_leitura'])
+
+from .whatsapp_models import WhatsAppConfig

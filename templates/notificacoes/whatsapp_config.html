@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% block title %}WhatsApp{% endblock %}
+{% block page_title %}Configuração WhatsApp{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-header-title">
+      <i class="bi bi-whatsapp me-2" style="color:#25d366;"></i>WhatsApp Business
+    </h1>
+    <p class="page-header-sub">Conecte sua conta para enviar notificações automáticas de locação</p>
+  </div>
+</div>
+
+{% if config and config.ativo %}
+{# ── CONECTADO ── #}
+<div class="row g-4">
+
+  <div class="col-lg-4">
+    <div class="form-card text-center py-4">
+      <div style="font-size:3rem;color:#25d366;margin-bottom:12px;">
+        <i class="bi bi-whatsapp"></i>
+      </div>
+      <div class="fw-bold text-success mb-1">Conectado</div>
+      <div class="text-muted small mb-3">{{ config.numero_whatsapp|default:config.phone_number_id }}</div>
+
+      <dl class="text-start small mb-4">
+        <dt class="text-muted">Total enviados</dt>
+        <dd class="fw-semibold">{{ config.total_enviados }}</dd>
+        <dt class="text-muted">Último envio</dt>
+        <dd>{{ config.ultimo_envio_em|date:"d/m/Y H:i"|default:"—" }}</dd>
+        <dt class="text-muted">Configurado em</dt>
+        <dd>{{ config.configurado_em|date:"d/m/Y" }}</dd>
+      </dl>
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="desconectar">
+        <button type="submit" class="btn btn-outline-danger w-100"
+                onclick="return confirm('Desconectar o WhatsApp? As notificações automáticas serão pausadas.')">
+          <i class="bi bi-plug me-2"></i>Desconectar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+
+    {# Notificações automáticas #}
+    <div class="form-card mb-4">
+      <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+        <i class="bi bi-bell me-2"></i>Notificações Automáticas
+      </h6>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="salvar">
+        <input type="hidden" name="phone_number_id" value="{{ config.phone_number_id }}">
+        <input type="hidden" name="access_token" value="{{ config.access_token }}">
+        <input type="hidden" name="numero_whatsapp" value="{{ config.numero_whatsapp }}">
+
+              <div class="row g-3">
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="notif_locacao_criada"
+                     id="notif_locacao_criada" {% if config.notif_locacao_criada %}checked{% endif %}>
+              <label class="form-check-label fw-semibold" for="notif_locacao_criada">
+                Confirmar locação criada
+              </label>
+            </div>
+            <div class="text-muted small ms-4">Envia mensagem ao cliente quando uma locação é confirmada.</div>
+          </div>
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="notif_devolucao_amanha"
+                     id="notif_devolucao_amanha" {% if config.notif_devolucao_amanha %}checked{% endif %}>
+              <label class="form-check-label fw-semibold" for="notif_devolucao_amanha">
+                Lembrete de devolução (dia anterior)
+              </label>
+            </div>
+            <div class="text-muted small ms-4">Avisa o cliente 1 dia antes do vencimento.</div>
+          </div>
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="notif_atraso"
+                     id="notif_atraso" {% if config.notif_atraso %}checked{% endif %}>
+              <label class="form-check-label fw-semibold" for="notif_atraso">
+                Avisos de atraso (diário)
+              </label>
+            </div>
+            <div class="text-muted small ms-4">Notifica clientes com devolução em atraso.</div>
+          </div>
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="notif_cancelamento"
+                     id="notif_cancelamento" {% if config.notif_cancelamento %}checked{% endif %}>
+              <label class="form-check-label fw-semibold" for="notif_cancelamento">
+                Informar cancelamento
+              </label>
+            </div>
+            <div class="text-muted small ms-4">Notifica o cliente quando uma locação é cancelada.</div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-2"></i>Salvar preferências
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {# Teste de envio #}
+    <div class="form-card">
+      <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+        <i class="bi bi-send me-2"></i>Enviar Mensagem de Teste
+      </h6>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-8">
+          <label class="form-label">Telefone (com DDD)</label>
+          <input type="text" id="telefone_teste" class="form-control"
+                 placeholder="11999998888" />
+        </div>
+        <div class="col-md-4">
+          <button type="button" class="btn btn-success w-100" id="btnTeste">
+            <i class="bi bi-whatsapp me-2"></i>Testar
+          </button>
+        </div>
+        <div class="col-12">
+          <div id="resultado_teste"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% else %}
+{# ── NÃO CONECTADO ── #}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <div class="p-4 rounded-3 mb-4" style="background:#f0fdf4;border:1px solid #86efac;">
+      <h6 class="fw-bold text-success mb-3">
+        <i class="bi bi-info-circle me-2"></i>Como conectar
+      </h6>
+      <ol class="small mb-0" style="line-height:2;">
+        <li>Acesse <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a></li>
+        <li>Crie um App do tipo <strong>Business</strong> e adicione o produto <strong>WhatsApp</strong></li>
+        <li>Em <em>WhatsApp → Introdução</em>, copie o <strong>Phone Number ID</strong> e o <strong>Access Token</strong></li>
+        <li>Cole os dados abaixo e clique em <strong>Conectar</strong></li>
+        <li>Configure o Webhook apontando para:<br>
+          <code>https://{{ request.get_host }}/whatsapp/webhook/</code>
+        </li>
+      </ol>
+    </div>
+
+    <div class="form-card">
+      <h6 class="fw-bold mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:1px;">
+        <i class="bi bi-plug me-2"></i>Dados de Conexão
+      </h6>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="salvar">
+        <div class="mb-3">
+          <label class="form-label">Phone Number ID *</label>
+          <input type="text" name="phone_number_id" class="form-control font-monospace"
+                 placeholder="123456789012345" required>
+          <div class="form-text">Encontrado em WhatsApp → Introdução no Meta for Developers.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Access Token *</label>
+          <input type="text" name="access_token" class="form-control font-monospace"
+                 placeholder="EAAxxxxx..." required>
+          <div class="form-text">Token temporário (24h) ou permanente via System User.</div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Número do WhatsApp</label>
+          <input type="text" name="numero_whatsapp" class="form-control"
+                 placeholder="+55 11 99999-8888">
+          <div class="form-text">Apenas para exibição — não afeta o envio.</div>
+        </div>
+        <button type="submit" class="btn btn-success w-100">
+          <i class="bi bi-whatsapp me-2"></i>Conectar WhatsApp
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('btnTeste')?.addEventListener('click', () => {
+  const tel = document.getElementById('telefone_teste').value.trim();
+  const res = document.getElementById('resultado_teste');
+
+  if (!tel) {
+    res.innerHTML = '<div class="alert alert-warning py-2 small">Informe um telefone.</div>';
+    return;
+  }
+
+  res.innerHTML = '<div class="text-muted small">Enviando...</div>';
+
+  fetch('{% url "notificacoes:whatsapp_teste" %}', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `telefone=${encodeURIComponent(tel)}`,
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      res.innerHTML = `<div class="alert alert-success py-2 small">✅ ${data.mensagem}</div>`;
+    } else {
+      res.innerHTML = `<div class="alert alert-danger py-2 small">❌ ${data.erro}</div>`;
+    }
+  })
+  .catch(() => {
+    res.innerHTML = '<div class="alert alert-danger py-2 small">Erro de conexão.</div>';
+  });
+});
+</script>
+{% endblock %}
