@@ -40,7 +40,7 @@ RECURSOS_CONFIG: Dict[str, RecursoConfig] = {
         display_name='Alertas WhatsApp',
         icone='bi-whatsapp',
         descricao='Notificações automáticas de vencimento e atraso via WhatsApp.',
-        em_desenvolvimento=True,
+        em_desenvolvimento=False,
         previsao_lancamento=None,
     ),
     'api_acesso': RecursoConfig(
@@ -48,7 +48,7 @@ RECURSOS_CONFIG: Dict[str, RecursoConfig] = {
         display_name='Acesso à API',
         icone='bi-code-slash',
         descricao='API REST completa para integrar com outros sistemas.',
-        em_desenvolvimento=True,
+        em_desenvolvimento=False,
         previsao_lancamento=None,
     ),
     'suporte_prioritario': RecursoConfig(
@@ -56,7 +56,7 @@ RECURSOS_CONFIG: Dict[str, RecursoConfig] = {
         display_name='Suporte Prioritário',
         icone='bi-headset',
         descricao='Atendimento com SLA de 4h em horário comercial.',
-        em_desenvolvimento=True,
+        em_desenvolvimento=False,
         previsao_lancamento=None,
     ),
 }
