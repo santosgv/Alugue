@@ -174,8 +174,8 @@ class RelatorioOcupacaoService:
             ItemLocacao.objects
             .filter(
                 locacao__status__in=['ativa', 'atrasada'],
-                locacao__data_inicio__lte=hoje,
-                locacao__data_fim_prevista__gte=hoje,
+               # locacao__data_inicio__lte=hoje,
+               # locacao__data_fim_prevista__gte=hoje,
             )
             .values('produto__id')
             .annotate(qtd_em_uso=Sum('quantidade'))
