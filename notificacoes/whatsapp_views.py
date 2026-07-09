@@ -1,80 +1,214 @@
-import json
 import logging
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
+
 from .whatsapp_models import WhatsAppConfig
-from .whatsapp_service import WhatsAppService, WhatsAppConfigError, WhatsAppAPIError
+from .whatsapp_service import (
+    WhatsAppAPIError, WhatsAppConfigError,
+    criar_instancia, gerar_qr, status_instancia,
+    desconectar_instancia, deletar_instancia,
+    instancia_existe, enviar_texto,
+    notificar_locacao_criada, notificar_devolucao_amanha,
+    notificar_atraso, notificar_cancelamento,
+)
 
 logger = logging.getLogger(__name__)
 
 
+def _instance_name(empresa) -> str:
+    """Gera nome único de instância para a empresa."""
+    return f'locagest_{empresa.pk}'
+
+
 # ─────────────────────────────────────────────────────────────
-# FORMULÁRIO DE CONFIGURAÇÃO
+# PÁGINA PRINCIPAL — configuração e painel
 # ─────────────────────────────────────────────────────────────
 
 class WhatsAppConfigView(LoginRequiredMixin, TemplateView):
     template_name = 'notificacoes/whatsapp_config.html'
 
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
+        ctx     = super().get_context_data(**kwargs)
         empresa = getattr(self.request, 'empresa', None)
+        config  = WhatsAppConfig.objects.filter(empresa=empresa).first()
+
         ctx['empresa'] = empresa
-        ctx['config']  = WhatsAppConfig.objects.filter(empresa=empresa).first()
+        ctx['config']  = config
+
         return ctx
 
     def post(self, request):
         empresa = getattr(request, 'empresa', None)
         if not empresa:
             messages.error(request, 'Empresa não encontrada.')
-            return redirect('whatsapp_config')
+            return redirect('notificacoes:whatsapp_config')
 
         acao = request.POST.get('acao')
 
-        if acao == 'salvar':
-            return self._salvar(request, empresa)
-        if acao == 'desconectar':
-            return self._desconectar(request, empresa)
+        if acao == 'conectar':
+            return self._conectar(request, empresa)
+
+        if acao == 'salvar_preferencias':
+            return self._salvar_preferencias(request, empresa)
 
         messages.error(request, 'Ação inválida.')
         return redirect('notificacoes:whatsapp_config')
 
     @staticmethod
-    def _salvar(request, empresa):
-        phone_number_id = request.POST.get('phone_number_id', '').strip()
-        access_token    = request.POST.get('access_token', '').strip()
-        numero          = request.POST.get('numero_whatsapp', '').strip()
+    def _conectar(request, empresa):
+        """Cria a instância na Evolution API e inicia o fluxo de QR."""
+        instance_name = _instance_name(empresa)
 
-        if not phone_number_id or not access_token:
-            messages.error(request, 'Phone Number ID e Access Token são obrigatórios.')
+        try:
+            # Cria instância se não existir
+            if not instancia_existe(instance_name):
+                criar_instancia(instance_name)
+
+            # Cria ou atualiza config local
+            config, criado = WhatsAppConfig.objects.get_or_create(
+                empresa=empresa,
+                defaults={'instance_name': instance_name},
+            )
+            if not criado:
+                config.instance_name = instance_name
+                config.ativo = True
+                config.save(update_fields=['instance_name', 'ativo'])
+
+            messages.success(request, 'Instância criada! Escaneie o QR Code abaixo com seu celular.')
+            return redirect('notificacoes:whatsapp_qr')
+
+        except WhatsAppAPIError as e:
+            messages.error(request, f'Erro ao conectar: {e}')
             return redirect('notificacoes:whatsapp_config')
 
-        config, criado = WhatsAppConfig.objects.update_or_create(
-            empresa=empresa,
-            defaults={
-                'phone_number_id':       phone_number_id,
-                'access_token':          access_token,
-                'numero_whatsapp':       numero,
-                'ativo':                 True,
-                'notif_locacao_criada':  'notif_locacao_criada'  in request.POST,
-                'notif_devolucao_amanha':'notif_devolucao_amanha' in request.POST,
-                'notif_atraso':          'notif_atraso'          in request.POST,
-                'notif_cancelamento':    'notif_cancelamento'    in request.POST,
-            },
-        )
-        acao = 'configurado' if criado else 'atualizado'
-        messages.success(request, f'WhatsApp {acao} com sucesso!')
+    @staticmethod
+    def _salvar_preferencias(request, empresa):
+        config = WhatsAppConfig.objects.filter(empresa=empresa).first()
+        if not config:
+            messages.error(request, 'Configure o WhatsApp primeiro.')
+            return redirect('notificacoes:whatsapp_config')
+
+        config.notif_locacao_criada   = 'notif_locacao_criada'   in request.POST
+        config.notif_devolucao_amanha = 'notif_devolucao_amanha' in request.POST
+        config.notif_atraso           = 'notif_atraso'           in request.POST
+        config.notif_cancelamento     = 'notif_cancelamento'     in request.POST
+        config.save(update_fields=[
+            'notif_locacao_criada', 'notif_devolucao_amanha',
+            'notif_atraso', 'notif_cancelamento',
+        ])
+        messages.success(request, 'Preferências salvas.')
         return redirect('notificacoes:whatsapp_config')
 
-    @staticmethod
-    def _desconectar(request, empresa):
-        WhatsAppConfig.objects.filter(empresa=empresa).update(ativo=False)
-        messages.warning(request, 'WhatsApp desconectado. As notificações automáticas foram pausadas.')
+
+# ─────────────────────────────────────────────────────────────
+# QR CODE — exibe o QR para escanear
+# ─────────────────────────────────────────────────────────────
+
+class WhatsAppQRView(LoginRequiredMixin, View):
+
+    def get(self, request):
+        empresa = getattr(request, 'empresa', None)
+        config  = WhatsAppConfig.objects.filter(empresa=empresa).first()
+
+        if not config:
+            messages.error(request, 'Configure o WhatsApp primeiro.')
+            return redirect('notificacoes:whatsapp_config')
+
+        # Se já está conectado, vai para o painel
+        if config.esta_conectado:
+            messages.success(request, 'WhatsApp já está conectado!')
+            return redirect('notificacoes:whatsapp_config')
+
+        qr_data   = None
+        qr_base64 = None
+        erro      = None
+
+        try:
+            data      = gerar_qr(config.instance_name)
+            qr_base64 = data.get('base64') or data.get('qrcode', {}).get('base64')
+            qr_data   = data.get('code')   or data.get('qrcode', {}).get('code')
+        except WhatsAppAPIError as e:
+            erro = str(e)
+
+        return render(request, 'notificacoes/whatsapp_qr.html', {
+            'config':    config,
+            'qr_base64': qr_base64,
+            'qr_data':   qr_data,
+            'erro':      erro,
+        })
+
+
+# ─────────────────────────────────────────────────────────────
+# STATUS — polling AJAX da página de QR
+# ─────────────────────────────────────────────────────────────
+
+class WhatsAppStatusView(LoginRequiredMixin, View):
+    """Retorna JSON com o estado atual da instância. Usado por polling JS."""
+
+    def get(self, request):
+        empresa = getattr(request, 'empresa', None)
+        config  = WhatsAppConfig.objects.filter(empresa=empresa).first()
+
+        if not config:
+            return JsonResponse({'estado': 'desconectado', 'conectado': False})
+
+        try:
+            data  = status_instancia(config.instance_name)
+            state = data.get('instance', {}).get('state', 'close')
+            phone = data.get('instance', {}).get('profileName', '')
+
+            # Atualiza número vinculado se disponível
+            if state == 'open' and phone and phone != config.numero_vinculado:
+                config.numero_vinculado = phone
+                config.save(update_fields=['numero_vinculado'])
+
+            conectado = state == 'open'
+            print(f"WhatsAppStatusView: estado={state}, conectado={conectado}, numero={config.numero_vinculado}, instancia ={config.instance_name}")
+            return JsonResponse({
+                'estado':    state,
+                'conectado': conectado,
+                'numero':    config.numero_vinculado,
+            })
+
+        except WhatsAppAPIError as e:
+            return JsonResponse({'estado': 'erro', 'conectado': False, 'erro': str(e)})
+
+
+# ─────────────────────────────────────────────────────────────
+# DESCONECTAR
+# ─────────────────────────────────────────────────────────────
+
+class WhatsAppDesconectarView(LoginRequiredMixin, View):
+
+    def post(self, request):
+        empresa = getattr(request, 'empresa', None)
+        config  = WhatsAppConfig.objects.filter(empresa=empresa).first()
+
+        if not config:
+            messages.error(request, 'Nenhuma configuração encontrada.')
+            return redirect('notificacoes:whatsapp_config')
+
+        acao = request.POST.get('acao', 'logout')
+
+        try:
+            if acao == 'deletar':
+                desconectar_instancia(config.instance_name)
+                deletar_instancia(config.instance_name)
+                config.delete()
+                messages.warning(request, 'WhatsApp desconectado e instância removida.')
+            else:
+                desconectar_instancia(config.instance_name)
+                config.numero_vinculado = ''
+                config.save(update_fields=['numero_vinculado'])
+                messages.warning(request, 'WhatsApp desconectado. Escaneie o QR para reconectar.')
+
+        except WhatsAppAPIError as e:
+            messages.error(request, f'Erro ao desconectar: {e}')
+
         return redirect('notificacoes:whatsapp_config')
 
 
@@ -83,86 +217,32 @@ class WhatsAppConfigView(LoginRequiredMixin, TemplateView):
 # ─────────────────────────────────────────────────────────────
 
 class WhatsAppTesteView(LoginRequiredMixin, View):
+    """Envia mensagem de teste. Retorna JSON para AJAX."""
+
     def post(self, request):
         empresa  = getattr(request, 'empresa', None)
+        config   = WhatsAppConfig.objects.filter(empresa=empresa, ativo=True).first()
         telefone = request.POST.get('telefone', '').strip()
 
+        if not config:
+            return JsonResponse({'ok': False, 'erro': 'WhatsApp não configurado.'})
         if not telefone:
-            return JsonResponse({'ok': False, 'erro': 'Informe um telefone para o teste.'})
+            return JsonResponse({'ok': False, 'erro': 'Informe um telefone.'})
+        if not config.esta_conectado:
+            return JsonResponse({'ok': False, 'erro': 'WhatsApp não está conectado. Escaneie o QR code.'})
 
         try:
-            svc = WhatsAppService(empresa)
-            svc.enviar_texto(
+            enviar_texto(
+                config.instance_name,
                 telefone,
-                '✅ Teste de conexão do LocaGest!\n\n'
-                'Sua integração com o WhatsApp está funcionando corretamente. '
+                '✅ *Teste AlugeSe!*\n\nSua integração com o WhatsApp está funcionando. '
                 'Você receberá notificações automáticas de locações por este número.'
             )
+            config.registrar_envio()
             return JsonResponse({'ok': True, 'mensagem': f'Mensagem enviada para {telefone}!'})
 
-        except WhatsAppConfigError as e:
+        except (WhatsAppConfigError, WhatsAppAPIError) as e:
             return JsonResponse({'ok': False, 'erro': str(e)})
-        except WhatsAppAPIError as e:
-            return JsonResponse({'ok': False, 'erro': f'Erro da API: {e}'})
-        except Exception as e:
-            logger.exception("Erro inesperado no teste WhatsApp")
-            return JsonResponse({'ok': False, 'erro': f'Erro inesperado: {e}'})
-
-
-# ─────────────────────────────────────────────────────────────
-# WEBHOOK DA META (verificação + recebimento)
-# ─────────────────────────────────────────────────────────────
-
-@method_decorator(csrf_exempt, name='dispatch')
-class WhatsAppWebhookView(View):
-    def get(self, request):
-        """Verificação do webhook pela Meta."""
-        mode       = request.GET.get('hub.mode')
-        token      = request.GET.get('hub.verify_token')
-        challenge  = request.GET.get('hub.challenge')
-
-        if mode == 'subscribe' and WhatsAppService.verificar_webhook(token):
-            logger.info("Webhook WhatsApp verificado com sucesso.")
-            return HttpResponse(challenge, content_type='text/plain')
-
-        logger.warning(f"Verificação de webhook falhou — token={token!r}")
-        return HttpResponse(status=403)
-
-    def post(self, request):
-        """Recebe eventos da Meta (mensagens recebidas, status de entrega)."""
-        try:
-            payload = json.loads(request.body)
-        except json.JSONDecodeError:
-            return HttpResponse(status=400)
-
-        # Processa em background para não travar o webhook
-        try:
-            self._processar_payload(payload)
-        except Exception:
-            logger.exception("Erro ao processar payload do webhook WhatsApp")
-
-        # Sempre retorna 200 para a Meta não reenviar
-        return HttpResponse(status=200)
-
-    @staticmethod
-    def _processar_payload(payload: dict):
-        entry = payload.get('entry', [])
-        for e in entry:
-            for change in e.get('changes', []):
-                value = change.get('value', {})
-
-                # Mensagens recebidas dos clientes
-                for msg in value.get('messages', []):
-                    remetente = msg.get('from')
-                    texto     = msg.get('text', {}).get('body', '')
-                    logger.info(f"WhatsApp recebido de {remetente}: {texto!r}")
-                    # TODO: resposta automática, chatbot, etc.
-
-                # Status de entrega (sent, delivered, read, failed)
-                for status in value.get('statuses', []):
-                    msg_id    = status.get('id')
-                    estado    = status.get('status')
-                    logger.info(f"WhatsApp status: {msg_id} → {estado}")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -170,67 +250,62 @@ class WhatsAppWebhookView(View):
 # ─────────────────────────────────────────────────────────────
 
 class WhatsAppEnviarLocacaoView(LoginRequiredMixin, View):
+    """Envio manual de notificação para o cliente de uma locação."""
+
     def post(self, request, pk):
         from locacoes.models import Locacao
         from .models import Notificacao
 
         empresa = getattr(request, 'empresa', None)
         locacao = get_object_or_404(Locacao, pk=pk)
-        tipo    = request.POST.get('tipo', 'confirmacao')
+        config  = WhatsAppConfig.objects.filter(empresa=empresa, ativo=True).first()
+
+        if not config:
+            messages.error(request, 'WhatsApp não configurado. Acesse Configurações → WhatsApp.')
+            return redirect('locacoes:detalhe', pk=pk)
+
+        if not config.esta_conectado:
+            messages.error(request, 'WhatsApp não está conectado. Escaneie o QR code.')
+            return redirect('notificacoes:whatsapp_qr')
+
+        tipo = request.POST.get('tipo', 'confirmacao')
+
+        TIPOS = {
+            'confirmacao':  (notificar_locacao_criada,  'Confirmação enviada'),
+            'lembrete':     (notificar_devolucao_amanha,'Lembrete de devolução enviado'),
+            'cancelamento': (notificar_cancelamento,    'Cancelamento informado'),
+        }
+
+        if tipo == 'atraso':
+            from django.utils import timezone
+            dias = (timezone.localdate() - locacao.data_fim_prevista).days
+            fn   = lambda inst, loc: notificar_atraso(inst, loc, dias)
+            titulo_notif = f'Aviso de atraso ({dias}d) — Locação #{locacao.pk}'
+        elif tipo in TIPOS:
+            fn, label    = TIPOS[tipo]
+            titulo_notif = f'{label} — Locação #{locacao.pk}'
+        else:
+            messages.error(request, 'Tipo de notificação inválido.')
+            return redirect('locacoes:detalhe', pk=pk)
 
         try:
-            svc = WhatsAppService(empresa)
+            fn(config.instance_name, locacao)
+            config.registrar_envio()
 
-            if tipo == 'confirmacao':
-                svc.notificar_locacao_criada(locacao)
-                titulo_notif  = f'Confirmação enviada — Locação #{locacao.pk}'
-
-            elif tipo == 'lembrete':
-                svc.notificar_devolucao_amanha(locacao)
-                titulo_notif  = f'Lembrete enviado — Locação #{locacao.pk}'
-
-            elif tipo == 'atraso':
-                from django.utils import timezone
-                dias = (timezone.localdate() - locacao.data_fim_prevista).days
-                svc.notificar_atraso(locacao, dias)
-                titulo_notif  = f'Aviso de atraso enviado — Locação #{locacao.pk}'
-
-            elif tipo == 'cancelamento':
-                svc.notificar_locacao_cancelada(locacao)
-                titulo_notif  = f'Cancelamento informado — Locação #{locacao.pk}'
-
-            else:
-                messages.error(request, 'Tipo de notificação inválido.')
-                return redirect('locacoes:detalhe', pk=pk)
-
-            # Registra no histórico de notificações
             Notificacao.objects.create(
                 usuario=request.user,
                 titulo=titulo_notif,
-                mensagem=f'Mensagem WhatsApp enviada para {locacao.cliente.nome} '
-                         f'({locacao.cliente.telefone})',
+                mensagem=f'WhatsApp enviado para {locacao.cliente.nome} ({locacao.cliente.telefone})',
                 tipo=Notificacao.TIPO_INFO,
                 canal=Notificacao.CANAL_WHATSAPP,
                 locacao_ref=locacao,
                 enviada=True,
             )
-
-            # Atualiza contador da config
-            config = WhatsAppConfig.objects.filter(empresa=empresa).first()
-            if config:
-                config.registrar_envio()
-
-            messages.success(
-                request,
-                f'✅ Mensagem WhatsApp enviada para {locacao.cliente.nome}!'
-            )
+            messages.success(request, f'✅ Mensagem enviada para {locacao.cliente.nome}!')
 
         except WhatsAppConfigError as e:
-            messages.error(request, f'WhatsApp não configurado: {e}')
+            messages.error(request, str(e))
         except WhatsAppAPIError as e:
-            messages.error(request, f'Erro ao enviar WhatsApp: {e}')
-        except Exception as e:
-            logger.exception(f"Erro inesperado ao enviar WhatsApp para locação {pk}")
-            messages.error(request, f'Erro inesperado: {e}')
+            messages.error(request, f'Erro ao enviar: {e}')
 
         return redirect('locacoes:detalhe', pk=pk)

@@ -1,11 +1,10 @@
 from django.urls import path
 from . import views
 from .whatsapp_views import (
-    WhatsAppConfigView,
-    WhatsAppTesteView,
-    WhatsAppWebhookView,
-    WhatsAppEnviarLocacaoView,
-)
+        WhatsAppConfigView, WhatsAppQRView,
+        WhatsAppStatusView, WhatsAppDesconectarView,
+        WhatsAppEnviarLocacaoView, WhatsAppTesteView,
+    )
 
 app_name = 'notificacoes'
 
@@ -15,7 +14,9 @@ urlpatterns = [
     path('marcar-todas/', views.MarcarTodasLidasView.as_view(), name='marcar_todas'),
 
     path('whatsapp/',                  WhatsAppConfigView.as_view(),        name='whatsapp_config'),
-    path('whatsapp/teste/',            WhatsAppTesteView.as_view(),          name='whatsapp_teste'),
-    path('whatsapp/webhook/',          WhatsAppWebhookView.as_view(),        name='whatsapp_webhook'),
-    path('whatsapp/locacao/<int:pk>/', WhatsAppEnviarLocacaoView.as_view(),  name='whatsapp_locacao'),
+    path('whatsapp/qr/',                WhatsAppQRView.as_view(),            name='whatsapp_qr'),
+    path('whatsapp/status/',            WhatsAppStatusView.as_view(),        name='whatsapp_status'),
+    path('whatsapp/desconectar/',       WhatsAppDesconectarView.as_view(),   name='whatsapp_desconectar'),
+    path('whatsapp/teste/',             WhatsAppTesteView.as_view(),          name='whatsapp_teste'),
+    path('whatsapp/locacao/<int:pk>/',  WhatsAppEnviarLocacaoView.as_view(), name='whatsapp_locacao'),
 ]

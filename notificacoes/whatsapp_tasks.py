@@ -1,47 +1,36 @@
 """
 notificacoes/whatsapp_tasks.py
 ================================
-Envios automáticos de WhatsApp disparados por eventos do sistema.
+Envios automáticos de WhatsApp disparados por eventos ou agendamento.
 
-Duas formas de usar:
+Uso via signal (automático ao criar locação):
+    Configurado em notificacoes/apps.py → ready()
 
-1. SIGNALS (imediato) — dispara junto com o evento:
-   Conecte os signals em notificacoes/apps.py → ready()
-
-2. COMANDO DIÁRIO (agendado) — rode via cron ou Celery:
-   python manage.py enviar_whatsapp_diario
-   Cron exemplo (todo dia às 8h):
-     0 8 * * * cd /app && python manage.py enviar_whatsapp_diario
-
-Sem Celery é necessário o comando diário para lembretes e atrasos.
-Com Celery, chame as funções abaixo como tasks.
+Uso via comando diário (lembretes e atrasos):
+    python manage.py enviar_whatsapp_diario
+    Cron: 0 8 * * * cd /app && python manage.py enviar_whatsapp_diario
 """
-
 import logging
 from django.utils import timezone
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 logger = logging.getLogger(__name__)
 
 
-# ─────────────────────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────────────────────
+def _get_config(empresa):
+    """Retorna WhatsAppConfig ativo da empresa ou None."""
+    from .whatsapp_models import WhatsAppConfig
+    return WhatsAppConfig.objects.filter(empresa=empresa, ativo=True).first()
 
-def _get_service(empresa):
-    """
-    Retorna WhatsAppService para a empresa ou None se não configurado.
-    Silencia erros de configuração — não deve travar o fluxo principal.
-    """
-    from .whatsapp_service import WhatsAppService, WhatsAppConfigError
+
+def _get_empresa(locacao):
+    """Resolve a empresa a partir da locação."""
     try:
-        return WhatsAppService(empresa)
-    except WhatsAppConfigError:
+        return locacao.criado_por.perfil.empresa
+    except Exception:
         return None
 
 
-def _registrar_notificacao(usuario, titulo, mensagem, locacao=None, enviada=True):
+def _registrar(usuario, titulo, mensagem, locacao=None):
     """Cria registro de Notificacao no banco."""
     from .models import Notificacao
     try:
@@ -52,170 +41,149 @@ def _registrar_notificacao(usuario, titulo, mensagem, locacao=None, enviada=True
             tipo=Notificacao.TIPO_INFO,
             canal=Notificacao.CANAL_WHATSAPP,
             locacao_ref=locacao,
-            enviada=enviada,
+            enviada=True,
         )
     except Exception as e:
         logger.warning(f"Não foi possível registrar Notificacao: {e}")
 
 
 # ─────────────────────────────────────────────────────────────
-# SIGNAL — locação criada/confirmada
+# SIGNAL — dispara ao criar locação
 # ─────────────────────────────────────────────────────────────
 
 def enviar_whatsapp_locacao_criada(locacao):
     """
-    Chamado quando uma locação é criada com status 'ativa' ou 'pendente'.
-    Conecte este signal em notificacoes/apps.py.
+    Chamado pelo signal em notificacoes/apps.py quando
+    uma locação é criada com status ativa ou pendente.
     """
-    from .whatsapp_models import WhatsAppConfig
-    from .whatsapp_service import WhatsAppAPIError
+    from .whatsapp_service import notificar_locacao_criada, WhatsAppAPIError, WhatsAppConfigError
 
-    empresa = getattr(locacao, 'empresa', None)
-    if not empresa:
-        # Tenta resolver pelo usuário criador
-        if locacao.criado_por:
-            try:
-                empresa = locacao.criado_por.perfil.empresa
-            except Exception:
-                return
-
+    empresa = _get_empresa(locacao)
     if not empresa:
         return
 
-    config = WhatsAppConfig.objects.filter(empresa=empresa, ativo=True).first()
+    config = _get_config(empresa)
     if not config or not config.notif_locacao_criada:
         return
 
-    svc = _get_service(empresa)
-    if not svc:
+    if not config.esta_conectado:
+        logger.warning(f"WhatsApp desconectado — locação #{locacao.pk} não notificada.")
         return
 
     try:
-        svc.notificar_locacao_criada(locacao)
+        notificar_locacao_criada(config.instance_name, locacao)
         config.registrar_envio()
 
-        usuario = locacao.criado_por
-        if usuario:
-            _registrar_notificacao(
-                usuario=usuario,
+        if locacao.criado_por:
+            _registrar(
+                usuario=locacao.criado_por,
                 titulo=f'Confirmação enviada — Locação #{locacao.pk}',
                 mensagem=f'WhatsApp enviado para {locacao.cliente.nome}',
                 locacao=locacao,
             )
-        logger.info(f"WhatsApp de confirmação enviado — locação #{locacao.pk}")
+        logger.info(f"WhatsApp confirmação enviado — locação #{locacao.pk}")
 
-    except WhatsAppAPIError as e:
-        logger.error(f"Falha ao enviar WhatsApp de confirmação — locação #{locacao.pk}: {e}")
+    except (WhatsAppConfigError, WhatsAppAPIError) as e:
+        logger.error(f"Falha WhatsApp — locação #{locacao.pk}: {e}")
 
 
 # ─────────────────────────────────────────────────────────────
-# ENVIOS DIÁRIOS (rode via manage.py enviar_whatsapp_diario)
+# LEMBRETES DE DEVOLUÇÃO — rode diariamente
 # ─────────────────────────────────────────────────────────────
 
 def enviar_lembretes_devolucao():
     """
     Envia lembretes para locações com devolução prevista para amanhã.
-    Execute diariamente (ex: cron às 8h).
+    Retorna (enviados, erros).
     """
     from locacoes.models import Locacao
-    from .whatsapp_models import WhatsAppConfig
-    from .whatsapp_service import WhatsAppAPIError
+    from .whatsapp_service import notificar_devolucao_amanha, WhatsAppAPIError, WhatsAppConfigError
 
-    amanha = timezone.localdate() + timezone.timedelta(days=1)
+    amanha   = timezone.localdate() + timezone.timedelta(days=1)
+    locacoes = (
+        Locacao.objects
+        .filter(status='ativa', data_fim_prevista=amanha)
+        .select_related('cliente', 'criado_por__perfil__empresa')
+    )
 
-    locacoes = Locacao.objects.filter(
-        status__in=['ativa'],
-        data_fim_prevista=amanha,
-    ).select_related('cliente', 'criado_por__perfil__empresa')
-
-    enviados = 0
-    erros    = 0
+    enviados = erros = 0
 
     for locacao in locacoes:
-        try:
-            empresa = locacao.criado_por.perfil.empresa
-        except Exception:
+        empresa = _get_empresa(locacao)
+        if not empresa:
             continue
 
-        config = WhatsAppConfig.objects.filter(empresa=empresa, ativo=True).first()
-        if not config or not config.notif_devolucao_amanha:
-            continue
-
-        svc = _get_service(empresa)
-        if not svc:
+        config = _get_config(empresa)
+        if not config or not config.notif_devolucao_amanha or not config.esta_conectado:
             continue
 
         try:
-            svc.notificar_devolucao_amanha(locacao)
+            notificar_devolucao_amanha(config.instance_name, locacao)
             config.registrar_envio()
             enviados += 1
 
             if locacao.criado_por:
-                _registrar_notificacao(
+                _registrar(
                     usuario=locacao.criado_por,
-                    titulo=f'Lembrete de devolução — Locação #{locacao.pk}',
-                    mensagem=f'Devolução amanhã ({amanha.strftime("%d/%m/%Y")}) — '
-                             f'{locacao.cliente.nome}',
+                    titulo=f'Lembrete enviado — Locação #{locacao.pk}',
+                    mensagem=f'Devolução amanhã — {locacao.cliente.nome}',
                     locacao=locacao,
                 )
-        except WhatsAppAPIError as e:
+        except (WhatsAppConfigError, WhatsAppAPIError) as e:
             erros += 1
-            logger.error(f"Erro no lembrete — locação #{locacao.pk}: {e}")
+            logger.error(f"Erro lembrete — locação #{locacao.pk}: {e}")
 
-    logger.info(f"Lembretes de devolução: {enviados} enviados, {erros} erros.")
+    logger.info(f"Lembretes devolução: {enviados} enviados, {erros} erros.")
     return enviados, erros
 
 
+# ─────────────────────────────────────────────────────────────
+# AVISOS DE ATRASO — rode diariamente
+# ─────────────────────────────────────────────────────────────
+
 def enviar_avisos_atraso():
     """
-    Envia avisos para locações atrasadas (passou da data de devolução).
-    Execute diariamente (ex: cron às 8h).
+    Envia avisos para locações atrasadas.
+    Retorna (enviados, erros).
     """
     from locacoes.models import Locacao
-    from .whatsapp_models import WhatsAppConfig
-    from .whatsapp_service import WhatsAppAPIError
+    from .whatsapp_service import notificar_atraso, WhatsAppAPIError, WhatsAppConfigError
 
-    hoje = timezone.localdate()
+    hoje     = timezone.localdate()
+    locacoes = (
+        Locacao.objects
+        .filter(status__in=['ativa', 'atrasada'], data_fim_prevista__lt=hoje)
+        .select_related('cliente', 'criado_por__perfil__empresa')
+    )
 
-    locacoes = Locacao.objects.filter(
-        status__in=['ativa', 'atrasada'],
-        data_fim_prevista__lt=hoje,
-    ).select_related('cliente', 'criado_por__perfil__empresa')
-
-    enviados = 0
-    erros    = 0
+    enviados = erros = 0
 
     for locacao in locacoes:
-        try:
-            empresa = locacao.criado_por.perfil.empresa
-        except Exception:
+        empresa = _get_empresa(locacao)
+        if not empresa:
             continue
 
-        config = WhatsAppConfig.objects.filter(empresa=empresa, ativo=True).first()
-        if not config or not config.notif_atraso:
+        config = _get_config(empresa)
+        if not config or not config.notif_atraso or not config.esta_conectado:
             continue
 
-        svc = _get_service(empresa)
-        if not svc:
-            continue
-
-        dias_atraso = (hoje - locacao.data_fim_prevista).days
+        dias = (hoje - locacao.data_fim_prevista).days
 
         try:
-            svc.notificar_atraso(locacao, dias_atraso)
+            notificar_atraso(config.instance_name, locacao, dias)
             config.registrar_envio()
             enviados += 1
 
             if locacao.criado_por:
-                _registrar_notificacao(
+                _registrar(
                     usuario=locacao.criado_por,
-                    titulo=f'Atraso {dias_atraso}d — Locação #{locacao.pk}',
-                    mensagem=f'{locacao.cliente.nome} está com {dias_atraso} dia(s) de atraso.',
+                    titulo=f'Atraso {dias}d — Locação #{locacao.pk}',
+                    mensagem=f'{locacao.cliente.nome} com {dias} dia(s) de atraso.',
                     locacao=locacao,
                 )
-        except WhatsAppAPIError as e:
+        except (WhatsAppConfigError, WhatsAppAPIError) as e:
             erros += 1
-            logger.error(f"Erro no aviso de atraso — locação #{locacao.pk}: {e}")
+            logger.error(f"Erro atraso — locação #{locacao.pk}: {e}")
 
-    logger.info(f"Avisos de atraso: {enviados} enviados, {erros} erros.")
+    logger.info(f"Avisos atraso: {enviados} enviados, {erros} erros.")
     return enviados, erros

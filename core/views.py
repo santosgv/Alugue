@@ -32,7 +32,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         ctx['total_produtos']      = Produto.objects.filter(status='ativo').count()
         ctx['total_categorias']    = CategoriaProduto.objects.count()
         ctx['locacoes_ativas']     = Locacao.objects.filter(status__in=['ativa', 'pendente']).count()
-        ctx['locacoes_atrasadas']  = Locacao.objects.filter(status='atrasada').count()
+        ctx['locacoes_atrasadas']  = DisponibilidadeService.locacoes_atrasadas()
         ctx['proximas_devolucoes'] = DisponibilidadeService.produtos_proximos_devolucao(dias=7)
         ctx['locacoes_em_atraso']  = DisponibilidadeService.locacoes_atrasadas()[:5]
         ctx['produtos_disponiveis'] = Produto.objects.filter(status='ativo', quantidade_disponivel__gt=0).count()
