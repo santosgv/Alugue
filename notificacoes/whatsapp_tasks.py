@@ -87,6 +87,41 @@ def enviar_whatsapp_locacao_criada(locacao):
         logger.error(f"Falha WhatsApp — locação #{locacao.pk}: {e}")
 
 
+def enviar_whatsapp_locacao_cancelada(locacao):
+    """
+    Chamado pelo signal em notificacoes/apps.py quando
+    uma locação com status Cancelado.
+    """
+    from .whatsapp_service import notificar_cancelamento, WhatsAppAPIError, WhatsAppConfigError
+
+    empresa = _get_empresa(locacao)
+    if not empresa:
+        return
+
+    config = _get_config(empresa)
+    if not config or not config.notif_cancelamento:
+        return
+
+    if not config.esta_conectado:
+        logger.warning(f"WhatsApp desconectado — locação #{locacao.pk} não notificada.")
+        return
+
+    try:
+        notificar_cancelamento(config.instance_name, locacao)
+        config.registrar_envio()
+
+        if locacao.criado_por:
+            _registrar(
+                usuario=locacao.criado_por,
+                titulo=f'Cancelamento enviado — Locação #{locacao.pk}',
+                mensagem=f'WhatsApp enviado para {locacao.cliente.nome}',
+                locacao=locacao,
+            )
+        logger.info(f"WhatsApp Cancelamento enviado — locação #{locacao.pk}")
+
+    except (WhatsAppConfigError, WhatsAppAPIError) as e:
+        logger.error(f"Falha WhatsApp — locação #{locacao.pk}: {e}")
+
 # ─────────────────────────────────────────────────────────────
 # LEMBRETES DE DEVOLUÇÃO — rode diariamente
 # ─────────────────────────────────────────────────────────────

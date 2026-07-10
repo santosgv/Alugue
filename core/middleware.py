@@ -60,6 +60,7 @@ ROTAS_LIBERADAS = (
     '/media/',
     '/webhooks/stripe/',
     '/whatsapp/webhook/',
+    '/notificacoes/whatsapp/status/',
 )
 
 GRACE_PERIOD_DIAS = 1
