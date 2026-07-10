@@ -170,15 +170,32 @@ def _telefone(locacao) -> str:
 
 
 def notificar_locacao_criada(instance_name: str, locacao) -> dict:
+    valor_formatado = f"R$ {locacao.valor_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+    itens_lista = []
+    for item in locacao.itens.all():
+        item_valor_unitario = f"{item.valor_unitario:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        item_valor_total = f"{item.valor_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        itens_lista.append(f"• {item.produto.nome} ({item.quantidade}x) - {item_valor_unitario} cada, total: {item_valor_total}")
+    
+    itens_texto = "\n".join(itens_lista) if itens_lista else "   • Nenhum item listado"
+
     msg = (
         f"✅ *Locação Confirmada!*\n\n"
         f"Olá, {locacao.cliente.nome}!\n"
         f"Sua locação *#{locacao.pk}* foi confirmada.\n\n"
         f"📅 *Período:* {locacao.data_inicio.strftime('%d/%m/%Y')} "
         f"até {locacao.data_fim_prevista.strftime('%d/%m/%Y')}\n"
-        f"💰 *Valor total:* R$ {locacao.valor_total}\n\n"
-        f"Em caso de dúvidas, entre em contato."
+        f"💰 *Valor total:* {valor_formatado}\n\n"
+        f"📦 *Itens Locados:*\n"
+        f"{itens_texto}\n\n"
+        f"📌 *Próximos passos:* \n"
+        f"• Compareça à nossa loja para retirada dos itens\n"
+        f"• Traga documento de identificação\n"
+        f"• Em caso de dúvidas, entre em contato conosco\n"
+        f"Agradecemos pela preferência! 🙏"
     )
+
     return enviar_texto(instance_name, _telefone(locacao), msg)
 
 
@@ -186,9 +203,16 @@ def notificar_devolucao_amanha(instance_name: str, locacao) -> dict:
     msg = (
         f"⏰ *Lembrete de Devolução*\n\n"
         f"Olá, {locacao.cliente.nome}!\n"
+        f"A data de devolução dos itens que você locou está chegando!\n"
         f"A devolução da locação *#{locacao.pk}* está prevista para "
         f"*amanhã, {locacao.data_fim_prevista.strftime('%d/%m/%Y')}*.\n\n"
-        f"Por favor, prepare os itens para a retirada. Obrigado! 🙏"
+        f"⚠️ *IMPORTANTE:*\n"
+        f"• Não se esqueça de devolver todos os itens\n"
+        f"• Verifique se estão em boas condições\n"
+        f"• Entregue na nossa loja no horário comercial\n\n"
+        f"🔔 *Precisa prorrogar?*\n"
+        f"Entre em contato conosco URGENTE para verificar disponibilidade.\n\n"
+        f"Qualquer dúvida, estamos à disposição! 💬"
     )
     return enviar_texto(instance_name, _telefone(locacao), msg)
 
@@ -197,9 +221,12 @@ def notificar_atraso(instance_name: str, locacao, dias: int) -> dict:
     msg = (
         f"⚠️ *Devolução em Atraso*\n\n"
         f"Olá, {locacao.cliente.nome}!\n"
-        f"Sua locação *#{locacao.pk}* está com *{dias} dia(s) de atraso*.\n"
-        f"Devolução prevista: {locacao.data_fim_prevista.strftime('%d/%m/%Y')}.\n\n"
-        f"Entre em contato para regularizar."
+        f"⏰  Sua locação *#{locacao.pk}* está com *{dias} dia(s) de atraso*.\n"
+        f"📅 Devolução prevista: {locacao.data_fim_prevista.strftime('%d/%m/%Y')}.\n\n"
+        f"⚠️ *O que fazer agora:*\n"
+        f"1. Devolva os itens IMEDIATAMENTE em nossa loja\n"
+        f"2. Entre em contato para regularizar a situação\n"
+        f"3. Esteja ciente de que multas estão sendo aplicadas\n"
     )
     return enviar_texto(instance_name, _telefone(locacao), msg)
 
@@ -209,6 +236,12 @@ def notificar_cancelamento(instance_name: str, locacao) -> dict:
         f"❌ *Locação Cancelada*\n\n"
         f"Olá, {locacao.cliente.nome}!\n"
         f"Sua locação *#{locacao.pk}* foi cancelada.\n\n"
-        f"Em caso de dúvidas, entre em contato."
+        f"📌 *Motivo do cancelamento:*\n"
+        f"• Solicitação do cliente\n"
+        f"• Indisponibilidade de itens\n"
+        f"• Problemas com pagamento\n"
+        f"• Outros motivos operacionais\n"
+        f"Lamentamos o ocorrido. Estamos à disposição para ajudar! 💙"
+
     )
     return enviar_texto(instance_name, _telefone(locacao), msg)

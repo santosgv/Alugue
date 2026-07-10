@@ -473,6 +473,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <i class="bi bi-gear-fill"></i> Django Admin
     </a>
     {% endif %}
+
+  {% if plano_tem_whatsapp or user.is_superuser %}
+  <a href="{% url 'notificacoes:whatsapp_config' %}" class="sidebar-link"><i class="bi bi-whatsapp me-1"></i>Conectar WhatsApp</a>
+  {% else %}
+  <a href="/planos/" class="sidebar-link text-muted"><i class="bi bi-whatsapp me-1"></i>Conectar WhatsApp <span class="badge bg-warning ms-auto" style="font-size:.6rem;">Upgrade</span> </a>
+  {% endif %}
   </div>
 
   <div class="sidebar-footer">
