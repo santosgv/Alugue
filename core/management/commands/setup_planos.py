@@ -15,53 +15,53 @@ from core.services import AssinaturaService
 
 PLANOS = [
         {
-        'nome':            'free',
+        'nome':            'Trial',
         'slug':            'free',
-        'descricao':       'Perfeito para quem está começando.',
+        'descricao':       'Perfeito para quem está começando. 14 Dias de teste.',
         'preco_mensal':    '0.00',
         'preco_anual':     '0.00',
         'limite_clientes': 20,
         'limite_produtos': 15,
         'limite_categorias': 5,
         'limite_locacoes': 20,
-        'limite_usuarios': 1, 
+        'limite_usuarios': 2, 
         'ordem':           0,
         'destaque':        False,
         'recursos': {
-            'whatsapp':          False,
-            'multiusuario':      False,
-            'relatorios':        False,
+            'whatsapp':          True,
+            'multiusuario':      True,
+            'relatorios':        True,
             'api_acesso':        False,
             'suporte_prioritario': False,
         },
     },
-    {
-        'nome':            'Básico',
-        'slug':            'basico',
-        'descricao':       'Perfeito para quem está começando.',
-        'preco_mensal':    '49.90',
-        'preco_anual':     '479.00',
-        'limite_clientes': 50,
-        'limite_produtos': 30,
-        'limite_categorias': 10,
-        'limite_locacoes': 50,
-        'limite_usuarios': 1, 
-        'ordem':           1,
-        'destaque':        False,
-        'recursos': {
-            'whatsapp':          False,
-            'multiusuario':      False,
-            'relatorios':        False,
-            'api_acesso':        False,
-            'suporte_prioritario': False,
-        },
-    },
+#    {
+#        'nome':            'Básico',
+#        'slug':            'basico',
+#        'descricao':       'Perfeito para quem está começando.',
+#        'preco_mensal':    '79.90',
+#        'preco_anual':     '900.00',
+#        'limite_clientes': 50,
+#        'limite_produtos': 30,
+#        'limite_categorias': 10,
+#        'limite_locacoes': 50,
+#        'limite_usuarios': 1, 
+#        'ordem':           1,
+#        'destaque':        False,
+#        'recursos': {
+#            'whatsapp':          True,
+#            'multiusuario':      False,
+#            'relatorios':        False,
+#            'api_acesso':        False,
+#            'suporte_prioritario': False,
+#        },
+#    },
     {
         'nome':            'Pro',
         'slug':            'pro',
         'descricao':       'Para negócios em crescimento. O mais popular.',
-        'preco_mensal':    '99.90',
-        'preco_anual':     '959.00',
+        'preco_mensal':    '79.90',
+        'preco_anual':     '900.00',
         'limite_clientes': 300,
         'limite_produtos': 150,
         'limite_categorias': 30,
@@ -71,7 +71,7 @@ PLANOS = [
         'destaque':        True,
         'recursos': {
             'whatsapp':          True,
-            'multiusuario':      False,
+            'multiusuario':      True,
             'relatorios':        True,
             'api_acesso':        False,
             'suporte_prioritario': False,
@@ -82,7 +82,7 @@ PLANOS = [
         'slug':            'premium',
         'descricao':       'Poder total para grandes operações.',
         'preco_mensal':    '199.90',
-        'preco_anual':     '1919.00',
+        'preco_anual':     '2000.00',
         'limite_clientes': 0,
         'limite_produtos': 0,
         'limite_categorias': 0,
@@ -94,7 +94,7 @@ PLANOS = [
             'whatsapp':          True,
             'multiusuario':      True,
             'relatorios':        True,
-            'api_acesso':        True,
+            'api_acesso':        False,
             'suporte_prioritario': True,
         },
     },
@@ -125,26 +125,27 @@ class Command(BaseCommand):
                 self.stdout.write(f'  → Plano atualizado: {obj.nome}')
 
         # Cria empresa demo + trial se não existir
-       # empresa_qs = TenantCompany.objects.filter(nome='LocaGest')
-       #if not empresa_qs.exists() or force:
-       #     plano_pro = SubscriptionPlan.objects.get(slug='basico')
-       #     empresa, _ = TenantCompany.objects.update_or_create(
-       #         nome='Empresa Trial',
-       #         defaults={'ativo': True, 'plano': plano_pro},
-       #     )
-
-            # Cria trial de 14 dias
-        #    sub_existente = empresa.assinaturas.filter(
-        #        status__in=['trial', 'ativa']
-         #   ).first()
-         #   if not sub_existente or force:
-         #       AssinaturaService.criar_trial(empresa, plano_pro)
-         #       self.stdout.write(self.style.SUCCESS(
-         #           f'  ✔ Empresa "{empresa.nome}" criada com trial de 14 dias (plano Básico).'
-         #       ))
-         #   else:
-         #       self.stdout.write(f'  → Empresa "{empresa.nome}" já possui assinatura ativa.')
-        #else:
-        #    self.stdout.write(f'  → Empresa demo já existe.')
+        empresa_qs = TenantCompany.objects.filter(nome='LocaGest')
+        if not empresa_qs.exists() or force:
+            pass
+            #plano_pro = SubscriptionPlan.objects.get(slug='basico')
+            #empresa, _ = TenantCompany.objects.update_or_create(
+            #    nome='Empresa Trial',
+            #    defaults={'ativo': True, 'plano': plano_pro},
+            #)
+#
+            ## Cria trial de 14 dias
+            #sub_existente = empresa.assinaturas.filter(
+            #    status__in=['trial', 'ativa']
+            #).first()
+            #if not sub_existente or force:
+            #    AssinaturaService.criar_trial(empresa, plano_pro)
+            #    self.stdout.write(self.style.SUCCESS(
+            #        f'  ✔ Empresa "{empresa.nome}" criada com trial de 14 dias (plano Básico).'
+            #    ))
+            #else:
+            #    self.stdout.write(f'  → Empresa "{empresa.nome}" já possui assinatura ativa.')
+        else:
+            self.stdout.write(f'  → Empresa demo já existe.')
 
         self.stdout.write(self.style.SUCCESS('\n✔ Setup concluído!\n'))

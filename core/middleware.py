@@ -144,7 +144,9 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
 
         # ── 1. Verifica assinatura ─────────────────────────────
         assinatura = getattr(request, 'assinatura', None)
+
         bloqueado, motivo = self._avaliar(assinatura)
+
 
         if bloqueado:
             messages.warning(request, motivo)
@@ -166,6 +168,7 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
         Retorna (bloqueado: bool, motivo: str).
         """
         hoje = timezone.localdate()
+
 
         # Sem assinatura alguma
         if assinatura is None:
@@ -199,6 +202,7 @@ class AssinaturaGuardMiddleware(MiddlewareMixin):
                 'Acesse o portal de pagamento para atualizar seu cartão '
                 'e reativar o acesso.'
             )
+        
 
         # ── Status liberados (ativa / trial) ────────────────────
         if assinatura.status in STATUS_LIBERADOS:

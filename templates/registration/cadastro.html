@@ -1,0 +1,120 @@
+{% extends 'base_form.html' %}
+{% block title %}Criar conta — AlugeSe{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5"
+     style="background:linear-gradient(135deg,#eff6ff,#f0fdf4);">
+  <div style="width:100%;max-width:440px;padding:0 16px;">
+
+    <!-- Card de cadastro -->
+    <div style="background:#fff;border-radius:20px;padding:36px 32px;
+                box-shadow:0 8px 32px rgba(0,0,0,.08);">
+
+      <h4 class="fw-bold mb-1">Crie sua conta grátis</h4>
+      <p class="text-muted small mb-4">
+        <i class="bi bi-clock me-1 text-success"></i>
+        Trial de <strong>14 dias</strong> com acesso completo. Sem cartão de crédito.
+      </p>
+
+      <!-- Mensagens de erro -->
+      {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }} py-2 small">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Nome -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ form.nome.label }}</label>
+          {{ form.nome }}
+          {% if form.nome.errors %}
+          <div class="text-danger small mt-1">{{ form.nome.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <!-- E-mail -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ form.email.label }}</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+          <div class="text-danger small mt-1">{{ form.email.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Senha -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ form.senha.label }}</label>
+          {{ form.senha }}
+          {% if form.senha.errors %}
+          <div class="text-danger small mt-1">{{ form.senha.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Confirmação -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">{{ form.senha_confirmacao.label }}</label>
+          {{ form.senha_confirmacao }}
+          {% if form.senha_confirmacao.errors %}
+          <div class="text-danger small mt-1">{{ form.senha_confirmacao.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn w-100 fw-bold py-2"
+                style="background:#0ea5e9;color:#fff;border-radius:12px;font-size:1rem;">
+          <i class="bi bi-rocket-takeoff me-2"></i>Criar minha conta
+        </button>
+      </form>
+
+      <!-- Divider Google -->
+      {% if google_login_url %}
+      <div class="d-flex align-items-center gap-3 my-4">
+        <hr class="flex-grow-1 m-0"><span class="text-muted small">ou</span><hr class="flex-grow-1 m-0">
+      </div>
+      <a href="{{ google_login_url }}"
+         class="btn w-100 fw-semibold py-2"
+         style="border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#1e293b;">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+             width="20" height="20" class="me-2" alt="Google">
+        Continuar com Google
+      </a>
+      {% endif %}
+
+      <p class="text-center text-muted small mt-4 mb-0">
+        Já tem conta?
+        <a href="{% url 'accounts:login' %}" class="text-primary fw-semibold">Entrar</a>
+      </p>
+    </div>
+
+    <!-- O que inclui o trial -->
+    <div class="mt-4 px-2">
+      <div class="row g-2 text-center">
+        <div class="col-4">
+          <div style="background:#fff;border-radius:12px;padding:12px 8px;font-size:.75rem;">
+            <i class="bi bi-check-circle-fill text-success d-block mb-1"></i>
+            Clientes, produtos e Categorias
+          </div>
+        </div>
+        <div class="col-4">
+          <div style="background:#fff;border-radius:12px;padding:12px 8px;font-size:.75rem;">
+            <i class="bi bi-check-circle-fill text-success d-block mb-1"></i>
+            Controle de locações 
+          </div>
+        </div>
+        <div class="col-4">
+          <div style="background:#fff;border-radius:12px;padding:12px 8px;font-size:.75rem;">
+            <i class="bi bi-check-circle-fill text-success d-block mb-1"></i>
+            Relatórios e alertas
+          </div>
+        </div>
+      </div>
+      <p class="text-center text-muted mt-3" style="font-size:.72rem;">
+        Ao criar sua conta você concorda com os nossos Termos de Uso.
+      </p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

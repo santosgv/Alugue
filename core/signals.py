@@ -1,83 +1,108 @@
-# core/signals.py
+"""
+core/signals.py
+================
+Cria empresa + trial de 14 dias automaticamente quando
+um novo usuário é registrado (cadastro manual ou Google Login).
+"""
+import logging
+from datetime import timedelta
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from datetime import timedelta
-import logging
 
 from .models import TenantCompany, Assinatura, SubscriptionPlan
 
 logger = logging.getLogger(__name__)
+User   = get_user_model()
 
-User = get_user_model()
 
 @receiver(post_save, sender=User)
-def criar_empresa_e_assinatura_free(sender, instance, created, **kwargs):
+def criar_empresa_e_trial(sender, instance, created, **kwargs):
     """
-    Quando um novo usuário é criado (inclusive via Google Login),
-    cria automaticamente uma empresa e assinatura free.
+    Disparado quando um novo User é salvo.
+    Cria TenantCompany + Assinatura trial (14 dias) automaticamente.
     """
     if not created:
         return
-    
-    logger.info(f"Novo usuário criado: {instance.email} - Criando empresa e assinatura free...")
-    
+
+    if instance.is_superuser or instance.is_staff:
+        logger.info(f"Staff/superuser criado ({instance.email}) — trial não aplicável.")
+        return
+
+    logger.info(f"Novo usuário: {instance.email} — provisionando trial...")
+
     try:
-        # Verificar se o usuário já tem empresa
-        if hasattr(instance, 'empresa') and instance.empresa:
-            logger.info(f"Usuário {instance.email} já possui empresa, ignorando.")
+        from accounts.models import PerfilUsuario
+
+        # Evita duplicar se o signal disparar mais de uma vez
+        if PerfilUsuario.objects.filter(user=instance, empresa__isnull=False).exists():
+            logger.info(f"{instance.email} já tem empresa — ignorando.")
             return
-        
-        # Buscar o plano free
-        plano_free = SubscriptionPlan.objects.filter(
-            slug='free', 
-            ativo=True
-        ).first()
-        
-        if not plano_free:
-            logger.error("Plano Free não encontrado! Verifique se o plano 'free' existe.")
+
+        # ── Busca o plano básico/pro para o trial ──────────────
+        # O trial usa o plano mais completo disponível para o usuário
+        # experimentar todas as funcionalidades.
+        # Ajuste o slug conforme seu setup_planos.
+        plano_trial = (
+            SubscriptionPlan.objects.filter(slug='trial',    ativo=True).first()
+           # or SubscriptionPlan.objects.filter(slug='pro', ativo=True).first()
+           # or SubscriptionPlan.objects.filter(ativo=True).order_by('-preco_mensal').first()
+        )
+
+        if not plano_trial:
+            logger.error(f"Nenhum plano ativo encontrado para {instance.email}.")
             return
-        
-        # Criar a empresa
+
+        # ── Empresa ────────────────────────────────────────────
+        # IMPORTANTE: não use plano_atual= (é @property sem setter)
+        # nem usuario= (campo não existe no TenantCompany).
+        # Use apenas campos reais do model.
+        nome_display = (
+            instance.get_full_name().strip()
+            or instance.email.split('@')[0]
+        )
+
         empresa = TenantCompany.objects.create(
-            nome=f"Empresa de {instance.get_full_name() or instance.email}",
+            nome=f"Empresa de {nome_display}",
             email=instance.email,
-            usuario=instance,
-            plano_atual=plano_free,
-            stripe_customer_id=None,  # Free não tem stripe
+            plano=plano_trial,       # FK direto — não plano_atual
             ativo=True,
         )
-        
-        # Criar assinatura free
+        logger.info(f"Empresa criada: pk={empresa.pk} nome={empresa.nome}")
+
+        # ── Perfil: vincula User → Empresa ─────────────────────
+        perfil, _ = PerfilUsuario.objects.get_or_create(user=instance)
+        perfil.empresa = empresa
+        perfil.role    = PerfilUsuario.ROLE_ADMIN
+        perfil.ativo   = True
+        perfil.save(update_fields=['empresa', 'role', 'ativo'])
+
+        # ── Trial de 14 dias ───────────────────────────────────
+        hoje    = timezone.localdate()
+        data_fim = hoje + timedelta(days=14)
+
         assinatura = Assinatura.objects.create(
             empresa=empresa,
-            plano=plano_free,
-            ciclo='mensal',
-            status=Assinatura.STATUS_ATIVA,
-            data_inicio=timezone.localdate(),
-            data_fim=timezone.localdate() + timedelta(days=365 * 100),  # Free "eterno"
+            plano=plano_trial,
+            ciclo=Assinatura.CICLO_MENSAL,
+            status=Assinatura.STATUS_TRIAL,
+            data_inicio=hoje,
+            data_fim=data_fim,
             valor_cobrado=0,
+            criado_por=instance,
         )
-        
+
         logger.info(
-            f"✅ Empresa e assinatura free criadas para {instance.email}: "
-            f"Empresa ID: {empresa.pk}, Assinatura ID: {assinatura.pk}"
+            f"✅ Trial criado para {instance.email}: "
+            f"empresa={empresa.pk} | plano={plano_trial.slug} | "
+            f"vence={data_fim} | assinatura={assinatura.pk}"
         )
-        
-    except Exception as e:
-        logger.error(f"Erro ao criar empresa/assinatura para {instance.email}: {str(e)}", exc_info=True)
 
-
-@receiver(post_save, sender=TenantCompany)
-def atualizar_usuario_empresa(sender, instance, created, **kwargs):
-    """
-    Quando uma empresa é criada, atualiza o usuário com a referência à empresa.
-    """
-    if created and instance.usuario:
-        # Garantir que o usuário tem a referência para a empresa
-        if not hasattr(instance.usuario, 'empresa') or not instance.usuario.empresa:
-            instance.usuario.empresa = instance
-            instance.usuario.save(update_fields=['empresa'])
-            logger.info(f"Usuário {instance.usuario.email} vinculado à empresa {instance.pk}")
+    except Exception as exc:
+        # Não relança — erro aqui não deve impedir o usuário de ser salvo
+        logger.error(
+            f"❌ Erro ao provisionar trial para {instance.email}: {exc}",
+            exc_info=True,
+        )
