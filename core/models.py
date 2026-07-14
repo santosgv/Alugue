@@ -12,13 +12,13 @@ from django_tenants.models import TenantMixin,DomainMixin
 # ─────────────────────────────────────────────────────────────
 
 class SubscriptionPlan(models.Model):
-    PLANO_FREE     = 'free'
+    PLANO_FREE     = 'trial'
     PLANO_BASICO   = 'basico'
     PLANO_PRO      = 'pro'
     PLANO_PREMIUM  = 'premium'
 
     PLANO_CHOICES = [
-        (PLANO_FREE,    'Grátis'),
+        (PLANO_FREE,    'Trial'),
         (PLANO_BASICO,  'Básico'),
         (PLANO_PRO,     'Pro'),
         (PLANO_PREMIUM, 'Premium'),
