@@ -99,7 +99,7 @@ def provisionar_tenant_free(sender, instance, created, **kwargs):
         plano_free = SubscriptionPlan.objects.filter(slug='trial', ativo=True).first()
         if not plano_free:
             logger.error(
-                f"Plano 'free' não encontrado para {instance.email}. "
+                f"Plano 'trial' não encontrado para {instance.email}. "
                 f"Execute: python manage.py setup_planos"
             )
             return
@@ -119,7 +119,8 @@ def provisionar_tenant_free(sender, instance, created, **kwargs):
             schema_name=schema_name,
             nome=f"Empresa de {nome_display}",
             email=instance.email,
-            plano=plano_free,       # FK direto — não plano_atual
+            plano=plano_free,
+            data_expiracao=timezone.localdate() + timedelta(days=14),
             ativo=True,
         )
         logger.info(f"Empresa criada: pk={empresa.pk} schema={schema_name}")
@@ -160,7 +161,7 @@ def provisionar_tenant_free(sender, instance, created, **kwargs):
             empresa=empresa,
             plano=plano_free,
             ciclo=Assinatura.CICLO_MENSAL,
-            status=Assinatura.STATUS_ATIVA,
+            status=Assinatura.STATUS_TRIAL,
             data_inicio=timezone.localdate(),
             data_fim=data_fim,
             valor_cobrado=0,
@@ -170,7 +171,7 @@ def provisionar_tenant_free(sender, instance, created, **kwargs):
         logger.info(
             f"✅ Provisionamento concluído: {instance.email} | "
             f"empresa={empresa.pk} | schema={schema_name} | "
-            f"assinatura={assinatura.pk} | plano=free"
+            f"assinatura={assinatura.pk} | plano=trial"
         )
 
     except Exception as exc:
