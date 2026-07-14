@@ -13,10 +13,11 @@
         {% if assinatura %}
         <p class="text-muted">
           Você está cancelando o plano <strong>{{ assinatura.plano.nome }}</strong>.
-          {% if assinatura.data_fim %}
+        <!--   {% if assinatura.data_fim %}
           O acesso permanece ativo até <strong>{{ assinatura.data_fim|date:"d/m/Y" }}</strong>.
           {% endif %}
         </p>
+        -->
         {% endif %}
       </div>
 

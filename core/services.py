@@ -263,7 +263,7 @@ class AssinaturaService:
         """
         hoje = timezone.localdate()
         count = Assinatura.objects.filter(
-            status__in=[Assinatura.STATUS_ATIVA, Assinatura.STATUS_TRIAL],
+        #    status__in=[Assinatura.STATUS_ATIVA, Assinatura.STATUS_TRIAL],
             data_fim__lt=hoje,
         ).update(status=Assinatura.STATUS_EXPIRADA)
         return count
@@ -271,14 +271,14 @@ class AssinaturaService:
     @staticmethod
     def plano_ativo_da_empresa(empresa: TenantCompany) -> Optional[SubscriptionPlan]:
         sub = empresa.assinaturas.filter(
-            status__in=[Assinatura.STATUS_ATIVA, Assinatura.STATUS_TRIAL]
+        #    status__in=[Assinatura.STATUS_ATIVA, Assinatura.STATUS_TRIAL]
         ).select_related('plano').first()
         return sub.plano if sub else empresa.plano
 
     @staticmethod
     def assinatura_ativa(empresa: TenantCompany) -> Optional[Assinatura]:
         return empresa.assinaturas.filter(
-            status__in=[Assinatura.STATUS_ATIVA, Assinatura.STATUS_TRIAL]
+           # status__in=[Assinatura.STATUS_ATIVA, Assinatura.STATUS_TRIAL]
         ).select_related('plano').first()
 
 
