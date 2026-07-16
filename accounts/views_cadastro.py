@@ -1,17 +1,15 @@
 """
 accounts/views_cadastro.py
 ===========================
-View de cadastro público em /accounts/criar/
+View de cadastro com reCAPTCHA v3 + redirecionamento para tenant.
 
-Após criar o usuário:
-  1. Signal provisionar_tenant_free() cria TenantCompany + Domain + Assinatura
-  2. View lê o schema_name da empresa recém-criada
-  3. Redireciona para o subdomínio do tenant: schema.localhost:8000/
-
-Adicione em accounts/urls.py:
-    from .views_cadastro import CadastroView
-    path('criar/', CadastroView.as_view(), name='cadastro'),
+Configuração no settings.py / .env:
+    RECAPTCHA_SECRET_KEY = '6LeSOFYtA...'   # chave secreta (server-side)
+    RECAPTCHA_SITE_KEY   = '6LeSOFYtA...'   # chave pública (já está no template)
+    RECAPTCHA_SCORE_MIN  = 0.5              # score mínimo (0.0 a 1.0)
 """
+import requests as http_requests
+
 from django.contrib.auth import login, get_user_model
 from django.contrib import messages
 from django.shortcuts import redirect, render
@@ -22,6 +20,48 @@ from django.conf import settings
 
 User = get_user_model()
 
+
+# ─────────────────────────────────────────────────────────────
+# reCAPTCHA v3
+# ─────────────────────────────────────────────────────────────
+
+def _verificar_recaptcha(token: str, ip: str = '') -> tuple[bool, float]:
+    """
+    Verifica o token reCAPTCHA v3 com a API do Google.
+    Retorna (válido: bool, score: float).
+
+    Score:
+      1.0 → claramente humano
+      0.0 → claramente bot
+      0.5 → limiar padrão recomendado pelo Google
+    """
+    secret = getattr(settings, 'RECAPTCHA_SECRET_KEY', '')
+    if not secret:
+        # Se não configurou a chave, deixa passar (modo dev)
+        return True, 1.0
+
+    if not token:
+        return False, 0.0
+
+    try:
+        r = http_requests.post(
+            'https://www.google.com/recaptcha/api/siteverify',
+            data={'secret': secret, 'response': token, 'remoteip': ip},
+            timeout=5,
+        )
+        data    = r.json()
+        sucesso = data.get('success', False)
+        score   = float(data.get('score', 0.0))
+        return sucesso, score
+    except Exception:
+        # Falha na verificação → deixa passar para não bloquear usuários
+        # legítimos por problemas de rede. Ajuste se preferir bloquear.
+        return True, 1.0
+
+
+# ─────────────────────────────────────────────────────────────
+# FORM
+# ─────────────────────────────────────────────────────────────
 
 class CadastroForm(forms.Form):
     nome = forms.CharField(
@@ -71,12 +111,14 @@ class CadastroForm(forms.Form):
         return cleaned
 
 
+# ─────────────────────────────────────────────────────────────
+# HELPER — URL do tenant
+# ─────────────────────────────────────────────────────────────
+
 def _url_tenant(schema_name: str, path: str = '/') -> str:
     """
-    Monta a URL completa do subdomínio do tenant.
-
-    Dev:  schema='joao_silva' → http://joao_silva.localhost:8000/
-    Prod: schema='joao_silva' → https://joao_silva.locagest.com.br/
+    Dev:  'joao_silva' → http://joao_silva.localhost:8000/
+    Prod: 'joao_silva' → https://joao_silva.locagest.com.br/
     """
     base  = getattr(settings, 'TENANT_BASE_DOMAIN', 'localhost')
     debug = getattr(settings, 'DEBUG', False)
@@ -87,6 +129,10 @@ def _url_tenant(schema_name: str, path: str = '/') -> str:
         return f'{proto}://{schema_name}.{base}:{port}{path}'
     return f'{proto}://{schema_name}.{base}{path}'
 
+
+# ─────────────────────────────────────────────────────────────
+# VIEW
+# ─────────────────────────────────────────────────────────────
 
 class CadastroView(View):
     template_name = 'registration/cadastro.html'
@@ -100,6 +146,21 @@ class CadastroView(View):
         if request.user.is_authenticated:
             return redirect('dashboard')
 
+        # ── 1. Valida reCAPTCHA v3 antes de qualquer coisa ────
+        token     = request.POST.get('recaptchaToken', '')
+        ip        = request.META.get('REMOTE_ADDR', '')
+        ok, score = _verificar_recaptcha(token, ip)
+        score_min = getattr(settings, 'RECAPTCHA_SCORE_MIN', 0.5)
+
+        if not ok or score < score_min:
+            messages.error(
+                request,
+                'Verificação de segurança falhou. '
+                'Por favor, tente novamente.'
+            )
+            return render(request, self.template_name, {'form': CadastroForm()})
+
+        # ── 2. Valida o formulário ─────────────────────────────
         form = CadastroForm(request.POST)
         if not form.is_valid():
             return render(request, self.template_name, {'form': form})
@@ -109,42 +170,38 @@ class CadastroView(View):
         first  = partes[0]
         last   = partes[1] if len(partes) > 1 else ''
 
-        # Cria o usuário
+        # ── 3. Cria o usuário ──────────────────────────────────
         # O signal provisionar_tenant_free() dispara aqui e cria:
         #   TenantCompany → Domain → PerfilUsuario → Assinatura trial
         user = User.objects.create_user(
-            username=dados['email'].split('@')[0], #+ '_' + str(User.objects.count()),
+            username=dados['email'].split('@')[0],
             email=dados['email'],
             password=dados['senha'],
             first_name=first,
             last_name=last,
         )
 
-        # Loga imediatamente
+        # ── 4. Loga imediatamente ──────────────────────────────
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
-        # ── Redireciona para o subdomínio do tenant ────────────
-        # O signal já criou a empresa — buscamos pelo PerfilUsuario
+        # ── 5. Redireciona para o subdomínio do tenant ─────────
         try:
             from accounts.models import PerfilUsuario
             perfil  = PerfilUsuario.objects.select_related('empresa').get(user=user)
             empresa = perfil.empresa
 
             if empresa and empresa.schema_name:
-                url_tenant = _url_tenant(empresa.schema_name)
                 messages.success(
                     request,
                     f'Bem-vindo, {first}! Seu trial de 14 dias está ativo.'
                 )
-                return redirect(url_tenant)
+                return redirect(_url_tenant(empresa.schema_name))
 
         except Exception:
-            # Se por algum motivo o perfil/empresa não foi criado,
-            # fica no domínio principal com mensagem de erro amigável
             messages.warning(
                 request,
-                f'Conta criada! Estamos configurando seu espaço — '
-                f'aguarde alguns instantes e acesse novamente.'
+                'Conta criada! Estamos configurando seu espaço — '
+                'aguarde alguns instantes e acesse novamente.'
             )
 
         # Fallback: domínio principal
