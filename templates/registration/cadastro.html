@@ -1,6 +1,56 @@
 {% extends 'base_form.html' %}
+{% load socialaccount %}
 {% block title %}Criar conta — AlugeSe{% endblock %}
+{% block extra_css %}
+<script src="https://www.google.com/recaptcha/api.js?render=6LeSOFYtAAAAABvpqBD2n49ez6jAJHQ3EHFp12e_"></script>
+<style>
+     .google-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: #fff;
+            color: #757575;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .google-btn:hover {
+            background: #f5f5f5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .separator {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .separator::before, .separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+        .separator span {
+            padding: 0 10px;
+            color: #999;
+        }
 
+        </style>
+{% endblock %}
 {% block content %}
 <div class="min-vh-100 d-flex align-items-center justify-content-center py-5"
      style="background:linear-gradient(135deg,#eff6ff,#f0fdf4);">
@@ -61,6 +111,7 @@
           <div class="text-danger small mt-1">{{ form.senha_confirmacao.errors|join:", " }}</div>
           {% endif %}
         </div>
+        <input type="hidden" name="recaptchaToken" id="recaptchaToken">
 
         <button type="submit" class="btn w-100 fw-bold py-2"
                 style="background:#0ea5e9;color:#fff;border-radius:12px;font-size:1rem;">
@@ -68,19 +119,18 @@
         </button>
       </form>
 
-      <!-- Divider Google -->
-      {% if google_login_url %}
-      <div class="d-flex align-items-center gap-3 my-4">
-        <hr class="flex-grow-1 m-0"><span class="text-muted small">ou</span><hr class="flex-grow-1 m-0">
-      </div>
-      <a href="{{ google_login_url }}"
-         class="btn w-100 fw-semibold py-2"
-         style="border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#1e293b;">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-             width="20" height="20" class="me-2" alt="Google">
-        Continuar com Google
-      </a>
-      {% endif %}
+      <div class="separator">
+            <span>ou</span>
+        </div>
+        
+        <!-- Login com Google -->
+        <div style="text-align: center;">
+            <a href="{% provider_login_url 'google' process='login' %}" class="google-btn">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
+                Entrar com Google
+            </a>
+        </div>
+    
 
       <p class="text-center text-muted small mt-4 mb-0">
         Já tem conta?
@@ -117,4 +167,24 @@
 
   </div>
 </div>
+
+    <script>
+        grecaptcha.ready(function() {
+            grecaptcha.execute('6LeSOFYtAAAAABvpqBD2n49ez6jAJHQ3EHFp12e_', {action: 'login'}).then(function(token) {
+                document.getElementById('recaptchaToken').value = token;
+            });
+        });
+    </script>
+
+      {% block extra_js %}
+          <script>
+        grecaptcha.ready(function() {
+            grecaptcha.execute('6LeSOFYtAAAAABvpqBD2n49ez6jAJHQ3EHFp12e_', {action: 'login'}).then(function(token) {
+                document.getElementById('recaptchaToken').value = token;
+            });
+        });
+    </script>
+      
+      {% endblock %}
+  
 {% endblock %}
