@@ -2,14 +2,15 @@ from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from . import views
 from .views_cadastro import CadastroView
+from django_ratelimit.decorators import ratelimit
 
 app_name = 'accounts'
 
 urlpatterns = [
     # ── Autenticação ───────────────────────────────────────────
-    path('criar/', CadastroView.as_view(), name='cadastro'),
-    path('login/',  auth_views.LoginView.as_view(template_name='registration/login.html'),  name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('criar/',ratelimit(key='ip', method='GET', rate='10/m') (CadastroView.as_view()), name='cadastro'),
+    path('login/', ratelimit(key='ip', method='GET', rate='10/m') (auth_views.LoginView.as_view(template_name='registration/login.html')),  name='login'),
+    path('logout/', ratelimit(key='ip', method='GET', rate='10/m') (auth_views.LogoutView.as_view()), name='logout'),
 
     # ── Alterar senha (usuário logado) ─────────────────────────
     # success_url com reverse_lazy + namespace evita NoReverseMatch
@@ -67,10 +68,10 @@ urlpatterns = [
         name='password_reset_complete',
     ),
     # ── Perfil próprio ─────────────────────────────────────────
-    path('perfil/', views.PerfilView.as_view(), name='perfil'),
+    path('perfil/',ratelimit(key='ip', method='GET', rate='10/m')(views.PerfilView.as_view()), name='perfil'),
 
     # ── Usuários da empresa (admin da empresa) ─────────────────
-    path('usuarios/', views.UsuarioEmpresaListView.as_view(), name='usuarios_empresa'),
-    path('usuarios/<int:pk>/toggle/', views.ToggleUsuarioEmpresaView.as_view(), name='toggle_usuario'),
-    path('usuarios/<int:pk>/editar/', views.EditarPerfilUsuarioView.as_view(), name='editar_usuario'),
+    path('usuarios/', ratelimit(key='ip', method='GET', rate='10/m')(views.UsuarioEmpresaListView.as_view()), name='usuarios_empresa'),
+    path('usuarios/<int:pk>/toggle/', ratelimit(key='ip', method='GET', rate='10/m')(views.ToggleUsuarioEmpresaView.as_view()), name='toggle_usuario'),
+    path('usuarios/<int:pk>/editar/', ratelimit(key='ip', method='GET', rate='10/m')(views.EditarPerfilUsuarioView.as_view()), name='editar_usuario'),
 ]

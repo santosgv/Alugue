@@ -246,6 +246,7 @@ DATABASES = {
     }
 }
 
+
 # ── django-tenants (descomente ao migrar) ─────────────────────
 # TENANT_MODEL        = 'core.TenantCompany'
 # TENANT_DOMAIN_MODEL = 'core.Domain'
