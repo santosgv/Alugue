@@ -4,16 +4,18 @@ from .stripe_views import (
         IniciarCheckoutView, CheckoutSucessoView,
         BillingPortalView, StripeWebhookView,
     )
-
+from django_ratelimit.decorators import ratelimit
 
 urlpatterns = [
     # ── App do usuário final ───────────────────────────────────
-    path('',                       views.DashboardView.as_view(),            name='dashboard'),
-    path('planos/',                views.PlanosView.as_view(),               name='planos'),
-    path('assinatura/',            views.AssinaturaPainelView.as_view(),     name='assinatura_painel'),
-    path('assinatura/mudar/',      views.MudarPlanoView.as_view(),           name='mudar_plano'),
-    path('assinatura/cancelar/',   views.CancelarAssinaturaView.as_view(),   name='cancelar_assinatura'),
-    path('configuracoes/',         views.EmpresaConfigView.as_view(),        name='empresa_config'),
+    path('',ratelimit(key='ip', method='GET', rate='10/m')                      (views.DashboardView.as_view()),            name='dashboard'),
+    path('vendas/',ratelimit(key='ip', method='GET', rate='10/m')                (views.PaginaVendasView.as_view()),          name='pagina_vendas'),
+    path('planos/',ratelimit(key='ip', method='GET', rate='10/m')                (views.PlanosView.as_view()),               name='planos'),
+    path('assinatura/',ratelimit(key='ip', method='GET', rate='10/m')            (views.AssinaturaPainelView.as_view()),     name='assinatura_painel'),
+    path('assinatura/mudar/',ratelimit(key='ip', method='GET', rate='10/m')      (views.MudarPlanoView.as_view()),           name='mudar_plano'),
+    path('assinatura/cancelar/',ratelimit(key='ip', method='GET', rate='10/m')   (views.CancelarAssinaturaView.as_view()),   name='cancelar_assinatura'),
+    path('configuracoes/',ratelimit(key='ip', method='GET', rate='10/m')         (views.EmpresaConfigView.as_view()),        name='empresa_config'),
+    path('robots.txt',ratelimit(key='ip', method='GET', rate='10/m')             (views.robots),                             name='robots_txt'),
 
     # ── Painel do dono da plataforma (superuser) ───────────────
     path('plataforma/',

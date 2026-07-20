@@ -20,6 +20,42 @@ from django.conf import settings
 
 User = get_user_model()
 
+# ─────────────────────────────────────────────────────────────
+# reCAPTCHA v3
+# ─────────────────────────────────────────────────────────────
+
+def _verificar_recaptcha(token: str, ip: str = '') -> tuple[bool, float]:
+    """
+    Verifica o token reCAPTCHA v3 com a API do Google.
+    Retorna (válido: bool, score: float).
+
+    Score:
+      1.0 → claramente humano
+      0.0 → claramente bot
+      0.5 → limiar padrão recomendado pelo Google
+    """
+    secret = getattr(settings, 'RECAPTCHA_SECRET_KEY', '')
+    if not secret:
+        # Se não configurou a chave, deixa passar (modo dev)
+        return True, 1.0
+
+    if not token:
+        return False, 0.0
+
+    try:
+        r = http_requests.post(
+            'https://www.google.com/recaptcha/api/siteverify',
+            data={'secret': secret, 'response': token, 'remoteip': ip},
+            timeout=5,
+        )
+        data    = r.json()
+        sucesso = data.get('success', False)
+        score   = float(data.get('score', 0.0))
+        return sucesso, score
+    except Exception:
+        # Falha na verificação → deixa passar para não bloquear usuários
+        # legítimos por problemas de rede. Ajuste se preferir bloquear.
+        return True, 1.0
 
 # ─────────────────────────────────────────────────────────────
 # reCAPTCHA v3
@@ -145,6 +181,20 @@ class CadastroView(View):
     def post(self, request):
         if request.user.is_authenticated:
             return redirect('dashboard')
+        
+        # ── 1. Valida reCAPTCHA v3 antes de qualquer coisa ────
+        token     = request.POST.get('recaptchaToken', '')
+        ip        = request.META.get('REMOTE_ADDR', '')
+        ok, score = _verificar_recaptcha(token, ip)
+        score_min = getattr(settings, 'RECAPTCHA_SCORE_MIN', 0.5)
+
+        if not ok or score < score_min:
+            messages.error(
+                request,
+                'Verificação de segurança falhou. '
+                'Por favor, tente novamente.'
+            )
+            return render(request, self.template_name, {'form': CadastroForm()})
 
         # ── 1. Valida reCAPTCHA v3 antes de qualquer coisa ────
         token     = request.POST.get('recaptchaToken', '')
