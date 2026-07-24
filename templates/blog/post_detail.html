@@ -1,0 +1,378 @@
+<!-- blog/templates/blog/post_detail.html -->
+{% extends 'blog/base_blog.html' %}
+{% load static %}
+
+{% block title %}{{ post.titulo }} - Blog LocaGest{% endblock %}
+
+{% block extra_head %}
+    <meta name="description" content="{{ post.resumo }}">
+    <meta property="og:title" content="{{ post.titulo }}">
+    <meta property="og:description" content="{{ post.resumo }}">
+    {% if post.imagem_destaque %}
+        <meta property="og:image" content="{{ post.imagem_destaque.url }}">
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'blog:categoria_detail' post.categoria.slug %}">
+            {{ post.categoria.nome }}
+        </a>
+    </li>
+    <li class="breadcrumb-item active">{{ post.titulo|truncatechars:30 }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 order-lg-1">
+            {% include 'blog/partials/sidebar.html' %}
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9 order-lg-0">
+            <article>
+                <!-- Header -->
+                <header class="mb-4">
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge bg-{{ post.categoria.cor }}">
+                            <i class="fas {{ post.categoria.icone|default:'fa-tag' }}"></i>
+                            {{ post.categoria.nome }}
+                        </span>
+                        {% for tag in post.tags.all %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-hashtag"></i> {{ tag.name }}
+                            </span>
+                        {% endfor %}
+                        {% if post.destaque %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-star"></i> Destaque
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <h1 class="display-5">{{ post.titulo }}</h1>
+                    {% if post.subtitulo %}
+                        <p class="lead text-muted">{{ post.subtitulo }}</p>
+                    {% endif %}
+
+                    <div class="d-flex flex-wrap align-items-center gap-3 text-muted small">
+                        <span>
+                            <i class="fas fa-user"></i>
+                            {{ post.autor.get_full_name|default:post.autor.username }}
+                        </span>
+                        <span>
+                            <i class="fas fa-calendar-alt"></i>
+                            {{ post.published_at|date:"d/m/Y" }}
+                        </span>
+                        <span>
+                            <i class="fas fa-clock"></i>
+                            {{ post.get_tempo_leitura }} min de leitura
+                        </span>
+                        <span>
+                            <i class="fas fa-eye"></i>
+                            {{ post.views }} visualizações
+                        </span>
+                    </div>
+                </header>
+
+                <!-- Imagem de Destaque -->
+                {% if post.imagem_destaque %}
+                    <figure class="mb-4">
+                        <img src="{{ post.imagem_destaque.url }}" 
+                             alt="{{ post.titulo }}"
+                             class="img-fluid rounded w-100">
+                    </figure>
+                {% endif %}
+
+                <!-- 🔥 GALERIA DE IMAGENS (Carousel) -->
+                {% if tem_galeria %}
+                    <div class="mb-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-images"></i> Galeria de Imagens
+                        </h5>
+                        <div id="galeriaPost" class="carousel slide" data-bs-ride="carousel">
+                            <!-- Indicadores -->
+                            <div class="carousel-indicators">
+                                {% for imagem in imagens_galeria %}
+                                    <button type="button" 
+                                            data-bs-target="#galeriaPost" 
+                                            data-bs-slide-to="{{ forloop.counter0 }}"
+                                            {% if forloop.first %}class="active"{% endif %}
+                                            aria-current="{% if forloop.first %}true{% endif %}"
+                                            aria-label="Slide {{ forloop.counter }}">
+                                    </button>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Slides -->
+                            <div class="carousel-inner rounded">
+                                {% for imagem in imagens_galeria %}
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                        <img src="{{ imagem.imagem.url }}" 
+                                             class="d-block w-100" 
+                                             alt="{{ imagem.legenda|default:post.titulo }}"
+                                             style="max-height: 500px; object-fit: contain; background: #f8f9fa;">
+                                        {% if imagem.legenda %}
+                                            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-2">
+                                                <p class="mb-0">{{ imagem.legenda }}</p>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Controles -->
+                            <button class="carousel-control-prev" type="button" data-bs-target="#galeriaPost" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#galeriaPost" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Próximo</span>
+                            </button>
+                        </div>
+
+                        <!-- Miniaturas (Thumbnails) -->
+                        {% if imagens_galeria|length > 1 %}
+                            <div class="row g-2 mt-3">
+                                {% for imagem in imagens_galeria %}
+                                    <div class="col-2 col-md-1">
+                                        <img src="{{ imagem.imagem.url }}" 
+                                             class="img-fluid rounded cursor-pointer" 
+                                             alt="{{ imagem.legenda|default:post.titulo }}"
+                                             style="height: 60px; width: 100%; object-fit: cover; cursor: pointer;"
+                                             onclick="document.querySelector('#galeriaPost').carousel({{ forloop.counter0 }})">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <!-- Content -->
+                <div class="blog-content">
+                    {{ post.get_conteudo_html|safe }}
+                </div>
+
+                <!-- Tags -->
+                {% if post.tags.all %}
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="mb-2">
+                            <i class="fas fa-tags"></i> Tags:
+                        </h6>
+                        {% for tag in post.tags.all %}
+                            <a href="{% url 'blog:post_search' %}?q={{ tag.name }}" 
+                               class="btn btn-sm btn-outline-secondary me-1">
+                                <i class="fas fa-hashtag"></i> {{ tag.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Share Buttons -->
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="mb-2">
+                        <i class="fas fa-share-alt"></i> Compartilhar:
+                    </h6>
+                    <div class="d-flex gap-2">
+                        <a href="https://api.whatsapp.com/send?text={{ post.titulo }} - {{ request.build_absolute_uri }}" 
+                           target="_blank" 
+                           class="btn btn-success btn-sm">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
+                           target="_blank" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fab fa-facebook"></i> Facebook
+                        </a>
+                        <a href="https://twitter.com/intent/tweet?text={{ post.titulo }}&url={{ request.build_absolute_uri }}" 
+                           target="_blank" 
+                           class="btn btn-info btn-sm text-white">
+                            <i class="fab fa-twitter"></i> Twitter
+                        </a>
+                        <a href="https://www.linkedin.com/shareImagem?url={{ request.build_absolute_uri }}" 
+                           target="_blank" 
+                           class="btn btn-secondary btn-sm">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Related Posts -->
+                {% if posts_relacionados %}
+                    <div class="mt-5 pt-4 border-top">
+                        <h5 class="mb-4">
+                            <i class="fas fa-arrow-right"></i> Posts Relacionados
+                        </h5>
+                        <div class="row g-3">
+                            {% for rel in posts_relacionados %}
+                                <div class="col-md-3 col-6">
+                                    <a href="{{ rel.get_absolute_url }}" 
+                                       class="text-decoration-none">
+                                        <div class="card h-100">
+                                            {% if rel.imagem_destaque %}
+                                                <img src="{{ rel.imagem_destaque.url }}" 
+                                                     class="card-img-top" 
+                                                     alt="{{ rel.titulo }}"
+                                                     style="height: 120px; object-fit: cover;">
+                                            {% endif %}
+                                            <div class="card-body p-2">
+                                                <small class="text-dark">{{ rel.titulo|truncatechars:40 }}</small>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Comments -->
+                <div id="comentarios" class="mt-5 pt-4 border-top">
+                    <h5 class="mb-4">
+                        <i class="fas fa-comments"></i> Comentários ({{ comentarios.count }})
+                    </h5>
+
+                    <!-- Comments List -->
+                    {% if comentarios %}
+                        <div class="mb-4">
+                            {% for comentario in comentarios %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>{{ comentario.nome }}</strong>
+                                            <small class="text-muted">
+                                                {{ comentario.created_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                        <p class="mb-0 mt-2">{{ comentario.conteudo }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Seja o primeiro a comentar!</p>
+                    {% endif %}
+
+                    <!-- Comment Form -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-edit"></i> Deixe seu comentário
+                            </h6>
+                            <form method="post" class="mt-3">
+                                {% csrf_token %}
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        {{ form_comentario.nome }}
+                                        {% if form_comentario.nome.errors %}
+                                            <div class="text-danger small">{{ form_comentario.nome.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form_comentario.email }}
+                                        {% if form_comentario.email.errors %}
+                                            <div class="text-danger small">{{ form_comentario.email.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-12">
+                                        {{ form_comentario.conteudo }}
+                                        {% if form_comentario.conteudo.errors %}
+                                            <div class="text-danger small">{{ form_comentario.conteudo.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-paper-plane"></i> Enviar Comentário
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicializa o carousel com autoplay
+    document.addEventListener('DOMContentLoaded', function() {
+        var carousel = document.getElementById('galeriaPost');
+        if (carousel) {
+            var bsCarousel = new bootstrap.Carousel(carousel, {
+                interval: 5000,
+                wrap: true,
+                pause: 'hover'
+            });
+            
+            // 🔥 Clique nas miniaturas para navegar
+            document.querySelectorAll('.row.g-2 .col-2, .row.g-2 .col-md-1').forEach(function(thumb, index) {
+                thumb.addEventListener('click', function() {
+                    bsCarousel.to(index);
+                });
+            });
+        }
+    });
+</script>
+
+{{ block.super }}
+<script>
+    // Lightbox para galeria
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cria o modal lightbox dinamicamente
+        const lightbox = document.createElement('div');
+        lightbox.id = 'lightbox';
+        lightbox.style.cssText = `
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        `;
+        lightbox.innerHTML = `
+            <img id="lightbox-img" style="max-width: 90%; max-height: 90%; object-fit: contain;">
+            <button id="lightbox-close" style="
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 30px;
+                cursor: pointer;
+            ">&times;</button>
+        `;
+        document.body.appendChild(lightbox);
+        
+        // Abrir lightbox ao clicar nas imagens da galeria
+        document.querySelectorAll('#galeriaPost .carousel-item img, .row.g-2 img').forEach(img => {
+            img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const src = this.src;
+                document.getElementById('lightbox-img').src = src;
+                document.getElementById('lightbox').style.display = 'flex';
+            });
+        });
+        
+        // Fechar lightbox
+        document.getElementById('lightbox').addEventListener('click', function(e) {
+            if (e.target === this || e.target.id === 'lightbox-close') {
+                this.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

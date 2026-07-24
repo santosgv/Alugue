@@ -1,0 +1,104 @@
+<!-- blog/templates/blog/post_list.html -->
+{% extends 'blog/base_blog.html' %}
+{% load static %}
+
+{% block title %}
+    {% if categoria %}
+        {{ categoria.nome }} - Blog LocaGest
+    {% else %}
+        Blog - LocaGest
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb_items %}
+    {% if categoria %}
+        <li class="breadcrumb-item active">{{ categoria.nome }}</li>
+    {% else %}
+        <li class="breadcrumb-item active">Posts</li>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 order-lg-1">
+            {% include 'blog/partials/sidebar.html' %}
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9 order-lg-0">
+            <!-- Header -->
+            <div class="mb-4">
+                {% if categoria %}
+                    <h1 class="display-6">
+                        <i class="fas {{ categoria.icone|default:'fa-tag' }}"></i>
+                        {{ categoria.nome }}
+                    </h1>
+                    <p class="text-muted">{{ categoria.descricao }}</p>
+                {% else %}
+                    <h1 class="display-6">
+                        <i class="fas fa-newspaper"></i> Blog
+                    </h1>
+                    <p class="text-muted">
+                        Dicas, tutoriais e informações sobre locação de equipamentos.
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- Posts Grid -->
+            {% if posts %}
+                <div class="row g-4">
+                    {% for post in posts %}
+                        <div class="col-md-6 col-lg-4">
+                            {% include 'blog/partials/post_card.html' with post=post %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if posts.paginator.num_pages > 1 %}
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if posts.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ posts.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in posts.paginator.page_range %}
+                                {% if posts.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > posts.number|add:'-3' and num < posts.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if posts.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ posts.next_page_number }}{% if q %}&q={{ q }}{% endif %}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h3>Nenhum post encontrado</h3>
+                    <p class="text-muted">Não há posts publicados nesta categoria ainda.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

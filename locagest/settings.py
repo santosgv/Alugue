@@ -183,6 +183,8 @@ INSTALLED_APPS = [
     'agenda',     # tenant
     'notificacoes', # tenant
     'relatorios',
+    'blog',
+    'taggit',
 ]
 
 # ── Middleware ─────────────────────────────────────────────────

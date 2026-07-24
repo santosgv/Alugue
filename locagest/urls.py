@@ -26,7 +26,8 @@ urlpatterns = [
     path('locacoes/', include('locacoes.urls')),
     path('agenda/', include('agenda.urls')),
     path('notificacoes/', include('notificacoes.urls')),
-    path('relatorios/',include('relatorios.urls'))
+    path('relatorios/',include('relatorios.urls')),
+    path('blog/', include('blog.urls'))
 ] 
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

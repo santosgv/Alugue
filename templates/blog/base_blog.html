@@ -1,0 +1,168 @@
+<!-- blog/templates/blog/base_blog.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ post.resumo|default:'Blog sobre locação de equipamentos' }}">
+    <meta property="og:title" content="AlugaSe" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="." />
+    <meta property="og:url" content="." />
+    <meta property="og:site_name" content="AlugeSe" />
+    <meta property="og:description" content="Feito para quem loca de verdade" />
+    <meta name="Title"content="AlugeSe" />
+    <meta name="Author" content="Vitor Gomes" />
+    <meta name="description" content="Desenvolvedor FullStack.">
+    <meta name="KeyWords" content="locações,planilha,eventos ,tenda, cadeira, som, gerador, mesas ou qualquer equipamento." />
+    <meta name="generator" content="Microsoft FrontPage 5.0" />
+    <meta name="Language" CONTENT="Portuguese" />
+    <meta name="Rating" CONTENT="Safe For Kids" />
+    <meta name="Doc-class" CONTENT="Completed" />
+    <link rel="icon" href="{% static 'box-seam-fill.svg' %}" type="image/svg+xml" />
+    <title>{% block title %}Blog - AlugeSe{% endblock %}</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Blog CSS -->
+    <link href="{% static 'css/blog.css' %}" rel="stylesheet">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Menu Blog -->
+    <nav class="navbar navbar-expand-lg py-4 sticky-top" style="backdrop-filter:blur(12px);background:rgba(248,250,252,.85);border-bottom:1px solid rgba(0,0,0,.06);">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'blog:post_list' %}">
+                <i class="bi bi-box-seam-fill"></i> Blog AlugeSe
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#blogNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="blogNavbar">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'blog:post_list' %}">
+                            <i class="fas fa-home"></i> Início
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="fas fa-tags"></i> Categorias
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% for categoria in categorias %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'blog:categoria_detail' categoria.slug %}">
+                                        <i class="fas {{ categoria.icone|default:'fa-tag' }}"></i>
+                                        {{ categoria.nome }}
+                                    </a>
+                                </li>
+                            {% empty %}
+                                <li><span class="dropdown-item text-white">Sem categorias</span></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-arrow-left"></i> Voltar ao Sistema
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Breadcrumb -->
+    {% block breadcrumb %}
+        <div class="container mt-3">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'blog:post_list' %}">Blog</a>
+                    </li>
+                    {% block breadcrumb_items %}{% endblock %}
+                </ol>
+            </nav>
+        </div>
+    {% endblock %}
+
+    <!-- Content -->
+    <main class="py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="nav text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5><i class="bi bi-box-seam-fill"></i> Blog AlugeSe</h5>
+                    <p class="text-white-50">
+                        Dicas, tutoriais e informações sobre locação de equipamentos.
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Categorias</h5>
+                    <ul class="list-unstyled">
+                        {% for categoria in categorias|slice:":5" %}
+                            <li>
+                                <a href="{% url 'blog:categoria_detail' categoria.slug %}" 
+                                   class="text-white-50 text-decoration-none">
+                                    <i class="fas {{ categoria.icone|default:'fa-tag' }}"></i>
+                                    {{ categoria.nome }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Posts Recentes</h5>
+                    <ul class="list-unstyled">
+                        {% for post in posts_recentes|slice:":5" %}
+                            <li>
+                                <a href="{{ post.get_absolute_url }}" 
+                                   class="text-white-50 text-decoration-none">
+                                    {{ post.titulo|truncatechars:30 }}
+                                </a>
+                            </li>
+                        {% empty %}
+                            <li class="text-white-50">Nenhum post recente</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center text-white-50">
+                <small>
+                    &copy; {{ now|date:"Y" }} Blog AlugeSe - 
+                    <a href="/" class="text-white-50 text-decoration-none">
+                        <i class="fas fa-arrow-left"></i> Voltar ao Sistema
+                    </a>
+                </small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

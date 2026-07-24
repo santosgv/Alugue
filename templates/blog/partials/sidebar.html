@@ -1,0 +1,100 @@
+<!-- blog/templates/blog/partials/sidebar.html -->
+<div class="blog-sidebar">
+    <!-- Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="card-title">
+                <i class="fas fa-search"></i> Buscar
+            </h6>
+            <form action="{% url 'blog:post_search' %}" method="get">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" 
+                           placeholder="O que você procura?" value="{{ q|default:'' }}">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Categorias -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="card-title">
+                <i class="fas fa-tags"></i> Categorias
+            </h6>
+            <ul class="list-unstyled mb-0">
+                {% for categoria in categorias %}
+                    <li class="mb-1">
+                        <a href="{% url 'blog:categoria_detail' categoria.slug %}" 
+                           class="text-decoration-none">
+                            <span class="badge bg-{{ categoria.cor }}">
+                                <i class="fas {{ categoria.icone|default:'fa-tag' }}"></i>
+                            </span>
+                            {{ categoria.nome }}
+                            <span class="text-muted small">({{ categoria.posts.count }})</span>
+                        </a>
+                    </li>
+                {% empty %}
+                    <li class="text-muted small">Sem categorias</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Posts Populares -->
+    {% if posts_populares %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-fire"></i> Mais Lidos
+                </h6>
+                <ul class="list-unstyled">
+                    {% for post in posts_populares %}
+                        <li class="mb-2">
+                            <a href="{{ post.get_absolute_url }}" 
+                               class="text-decoration-none text-dark">
+                                <div class="d-flex align-items-start gap-2">
+                                    {% if post.imagem_destaque %}
+                                        <img src="{{ post.imagem_destaque.url }}" 
+                                             class="rounded" 
+                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% endif %}
+                                    <div>
+                                        <small class="d-block">{{ post.titulo|truncatechars:40 }}</small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-eye"></i> {{ post.views }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Arquivo -->
+    {% if arquivo_meses %}
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-archive"></i> Arquivo
+                </h6>
+                <ul class="list-unstyled mb-0">
+                    {% for mes in arquivo_meses %}
+                        <li>
+                            <a href="{% url 'blog:post_search' %}?mes={{ mes.mes|date:'Y-m' }}" 
+                               class="text-decoration-none">
+                                {{ mes.mes|date:"F Y" }}
+                                <span class="text-muted small">({{ mes.total }})</span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+</div>
